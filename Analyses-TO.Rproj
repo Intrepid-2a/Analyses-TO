@@ -1,8 +1,8 @@
 Version: 1.0
 ProjectId: 5da1163a-4499-45a7-b622-85dcb258664c
 
-RestoreWorkspace: Default
-SaveWorkspace: Default
+RestoreWorkspace: No
+SaveWorkspace: No
 AlwaysSaveHistory: Default
 
 EnableCodeIndexing: Yes
@@ -12,3 +12,5 @@ Encoding: UTF-8
 
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
+
+ProjectName: Intrepid-2a Analyses (replication lab)
