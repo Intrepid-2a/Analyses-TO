@@ -1,0 +1,38 @@
+---
+title: "Intrepid-2a replication analyses"
+author: "Marius 't Hart"
+date: "2025-03-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+The Intrepid consortium aims to compare three computational theories of consciousness by testing their predictions on spatial perception in inactivated areas of cortex. In the Intrepid-2a project, there are 3 psychophysics experiments testing spatial perception around the blind spot. In Toronto we are replicating the work from the primary lab in Glasgow. Here we analyse all three tasks.
+
+Tasks:
+- area perception: matching task; a circle around the fovea has to matched in size to a peripheral circle which is either around the blind spot, or at a different area of the retina
+- curvature perception: staircase task; participants reply whether an apparent motion path is curved to the left or to the right, the paths are either right next to the blind spot or away from the blind spot
+- distance perception: staircase task; participants reply which of two dot pairs is further from each other, either one of the dot pairs spans the blind spot, or neither do
+
+# Setup Code
+
+First we load all the scripts to do the analyses:
+
+```{r}
+# this script has function to download the data:
+source("R/data.R")
+
+```
+
+# Download Data
+
+We download the data from a (private) OSF repository:
+
+```{r}
+getData()
+```
+
