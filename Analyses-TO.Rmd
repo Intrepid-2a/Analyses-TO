@@ -2,7 +2,9 @@
 title: "Intrepid-2a replication analyses"
 author: "Marius 't Hart"
 date: "2025-03-31"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -26,13 +28,27 @@ First we load all the scripts to do the analyses:
 # this script has function to download the data:
 source("R/data.R")
 
+# this script contains generic utility functions:
+source("R/utilities.R")
+
+# this script contains functions to process the distance task data:
+source('R/distance.R')
+
 ```
 
 # Download Data
 
 We download the data from a (private) OSF repository:
 
-```{r}
+```{r eval=F}
 getData()
+```
+
+# Distance task
+
+First, we look at the data:
+
+```{r fig.width=5, fig.height=5}
+plotGroupPsychometricCurve()
 ```
 
