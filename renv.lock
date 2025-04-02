@@ -225,6 +225,17 @@
       ],
       "Hash": "5899f1eaa825580172bb56c08266f37c"
     },
+    "gnlm": {
+      "Package": "gnlm",
+      "Version": "1.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "rmutil"
+      ],
+      "Hash": "74e37b23c268a807594f798ff0b1a4bd"
+    },
     "highr": {
       "Package": "highr",
       "Version": "0.11",
@@ -520,6 +531,16 @@
         "yaml"
       ],
       "Hash": "062470668513dcda416927085ee9bdc7"
+    },
+    "rmutil": {
+      "Package": "rmutil",
+      "Version": "1.1.10",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "79c22a87416140a5c2252be2f89938dd"
     },
     "sass": {
       "Package": "sass",
