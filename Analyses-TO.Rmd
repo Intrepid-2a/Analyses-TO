@@ -34,6 +34,9 @@ source("R/utilities.R")
 # this script contains functions to process the distance task data:
 source('R/distance.R')
 
+# this script contains functions to process the curvature task data:
+source('R/curvature.R')
+
 ```
 
 # Download Data
@@ -43,12 +46,23 @@ We download the data from a (private) OSF repository:
 ```{r eval=F}
 getData()
 ```
+# Curvature task
+
+Let's look at the data:
+
+```{r fig.width=5, fig.height=5}
+plotCurvaturePsychometricCurve()
+```
+
+Perhaps there is a small effect of whether the stimulus was presented close to the blind spot or away from it.
 
 # Distance task
 
 First, we look at the data:
 
 ```{r fig.width=5, fig.height=5}
-plotGroupPsychometricCurve()
+plotDistancePsychometricCurve()
 ```
+
+We can see differences in the bias, and perhaps in the slope. To test this statistically, we will fit logistic functions to each participants' data, and test the conditions (ipsi/contra and across/away) in two repeated measures ANOVA's: one for each parameter (bias, slope).
 
