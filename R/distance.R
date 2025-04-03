@@ -152,7 +152,7 @@ eval_staircase <- function(data.df) {
 
 
 
-processDistanceData <- function(scale=0) {
+processDistanceData <- function() {
   
   allData <- loadDistanceData()
   
@@ -198,10 +198,6 @@ processDistanceData <- function(scale=0) {
       agcdf$participant <- participant
       agcdf$count       <- agccdf$count
       
-      if (scale == 1) {
-        agcdf$Targ_chosen <- agcdf$Targ_chosen - min(agcdf$Targ_chosen)
-        agcdf$Targ_chosen <- agcdf$Targ_chosen / max(agcdf$Targ_chosen)
-      }
       
       if (is.data.frame(condition_data)) {
         condition_data <- rbind(condition_data, agcdf)
@@ -342,7 +338,7 @@ plotDistancePsychometricCurve <- function(target='inline') {
 
 exportDistanceData <- function() {
   
-  allConditionData <- processDistanceData(scale=0)
+  allConditionData <- processDistanceData()
   
   allData <- NA
   
