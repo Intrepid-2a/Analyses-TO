@@ -80,7 +80,9 @@ downloadOSFdata <- function(repository,filelist,folder,overwrite=TRUE,unzip=FALS
                            conflicts = conflict)
       }
       
-      Sys.sleep(wait)
+      if (filename != filenames[length(filenames)]) {
+        Sys.sleep(wait)
+      }
       
     }
     
