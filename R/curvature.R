@@ -149,7 +149,7 @@ plotCurvaturePsychometricCurve <- function(target='inline') {
   
   plot(-1000,-1000,
        xlim=c(-.4, .4), ylim=c(0,1),
-       main=sprintf('curvature perception (N=%d)',N), xlab='difference [dva]', ylab='proportion outward chosen',
+       main=sprintf('curvature perception (N=%d)',N), xlab='curvature [dva^-1]', ylab='proportion outward chosen',
        ax=F, bty='n')
   
   lines(x=c(-.4,.4),y=c(0.5,0.5),col='gray',lty=3)
@@ -196,3 +196,161 @@ plotCurvaturePsychometricCurve <- function(target='inline') {
   
 }
 
+# statistics -----
+
+getAllCurvatureData <- function() {
+  
+  allConditionData <- processCurvatureData()
+  
+  info <- data.frame( eye  = c('ipsi','ipsi','cont','cont'),
+                      area = c('bsa', 'out', 'bsa', 'out') )
+  
+  allData <- NA
+  
+  for (condition in names(allConditionData)) {
+    
+    cond_df <- allConditionData[[condition]]
+    
+    
+    if (condition %in% c("ipsi_bsa", "ipsi_out")) {
+      cond_df$Eye <- 'ipsilateral'
+    } else {
+      cond_df$Eye <- 'contralateral'
+    }
+    if (condition %in% c("ipsi_bsa", "cont_bsa")) {
+      cond_df$Location <- 'blindspot'
+    } else {
+      cond_df$Location <- 'away'
+    }
+    
+    if (is.data.frame(allData)) {
+      allData <- rbind(allData, cond_df)
+    } else {
+      allData <- cond_df
+    }
+    
+  }
+  
+  return(allData)
+  
+}
+
+getCurvatureANOVAdata <- function() {
+  
+  data <- getAllCurvatureData()
+  
+  participants <- unique(data$participant)
+  eyes <- unique(data$Eye)
+  locations <- unique(data$Location)
+  
+  # create a data frame with all combinations of participants, eyes, and locations
+  df <- expand.grid(participant = participants, Eye = eyes, Location = locations)
+  
+  df$mean  <- NA
+  df$sd    <- NA
+  df$slope <- NA
+  
+  for (i in 1:nrow(df)) {
+    participant <- df$participant[i]
+    eye         <- df$Eye[i]
+    location    <- df$Location[i]
+    
+    # filter the data for the current combination
+    subdf <- data[data$participant == participant & data$Eye == eye & data$Location == location, ]
+    
+    # mod <- fit.mprobit( y=subdf$Targ_chosen, x =subdf$Difference,
+    #                     start <- c(-0.5,   1, 0  ),
+    #                     lower <- c(-3,   0.3, 0  ),
+    #                     upper <- c( 3,     3, 0.3) )
+    
+    prob_mod <- glm(OutwardResponse ~ Curvature, family=quasibinomial(link="probit"), data=subdf)
+    
+    par <- coef(prob_mod)
+    
+    df$mean[i] <- unname(par[1])
+    df$sd[i]   <- unname(par[2])
+    # df$marg[i] <- mod$par[3]
+    
+    df$slope[i] <- diff( predict(prob_mod, type = 'response', newdata=data.frame(Curvature=unname(par[1])+c(-.0000001, .0000001))) ) / (2*.0000001)
+    
+    # df$slope[i] <- diff(mprobit(p=mod$par, x=mod$par[1]+c(-.0000001, .0000001))) / (2*.0000001)
+    
+  }
+  
+  return(df)
+}
+
+doCurvatureStats <- function() {
+  
+  data <- getCurvatureANOVAdata()
+  
+  # fit the model
+  bias_aov <- afex::aov_ez(
+    id = "participant",
+    dv = "mean",
+    data = data,
+    within = c("Eye", "Location"),
+  )
+  
+  cat("==== Curvature Bias ANOVA:\n\n")
+  
+  print(bias_aov)
+  
+  # bs_data <- data[which(data$Location == "blindspot"),]
+  # 
+  # bsl_bias_aov <- afex::aov_ez(
+  #   id = "participant",
+  #   dv = "mean",
+  #   data = bs_data,
+  #   within = c("Eye"),
+  # )
+  # 
+  # cat("\n==== At Blindspot Bias Test:\n\n")
+  # 
+  # print(bsl_bias_aov)
+  
+  slope_aov <- afex::aov_ez(
+    id = "participant",
+    dv = "slope",
+    data = data,
+    within = c("Eye", "Location"),
+  )
+  
+  cat("\n==== Curvature slope ANOVA:\n\n")
+  
+  print(slope_aov)
+  
+  
+  dflist <- processCurvatureData()
+  
+  df <- NA
+  for (name in names(dflist)) {
+    subdf <- dflist[[name]]
+    
+    subdf$Eye <- NA
+    subdf$Location <- NA
+    
+    if (name %in% c('ipsi_bsa', 'ipsi_out')) {
+      subdf$Eye <- '_il'
+    } else {
+      subdf$Eye <- '_cl'
+    }
+    if (name %in% c('ipsi_bsa', 'cont_bsa')) {
+      subdf$Location <- '_bs'
+    } else {
+      subdf$Location <- '_ew'
+    }
+    if (is.data.frame(df)) {
+      df <- rbind(df, subdf)
+    } else {
+      df <- subdf
+    }
+  }
+  
+  cond_mod <- glm(OutwardResponse ~ Curvature * Eye * Location, family=quasibinomial(link="probit"), data=df)
+  
+  cat("\n==== Curvature GLM with probit link function:\n")
+  
+  summary(cond_mod)
+  
+}
