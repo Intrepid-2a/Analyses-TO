@@ -1,7 +1,7 @@
 ---
 title: "Intrepid-2a replication analyses"
 author: "Marius 't Hart"
-date: "2025-04-09"
+date: "2025-04-10"
 output:
   word_document: default
   html_document: default
@@ -38,6 +38,7 @@ source("R/mprobit.R")
 
 # this script contains functions to process the distance task data:
 source('R/distance2.R')
+source('R/distance3.R') # checks on original tests
 # this script contains functions to process the curvature task data:
 source('R/curvature.R')
 # this script contains functions to process the area task data:
@@ -111,6 +112,60 @@ We can see differences in the bias, and perhaps in the slope. To test this stati
 doDistanceStats()
 ```
 
+## Checks on distance perception effects
+
+Here we test if the effects seen in the distance perception are consistent across top and bottom foils, hemifields and eye of origin.
+
+### Foil location
+
+The bottom location for the foil was sometimes a little harder to see, and it has a larger angular difference with the target pair. Does that matter for the results?
+
+```{r, fig.width=10, fig.height=5}
+plotSplitDistancePsychometricCurves()
+```
+
+Somehow the difference between ipsi- and contralateral presentation goes away when the foil is in the bottom position.
+
+And the statistics:
+
+```{r}
+doSplitDistanceStats()
+```
+
+PSE shifts depending on target location (across blind spot or elsewhere), and this is modulated by the location of the foil. No effects on slope.
+
+### Hemifield
+
+Here we compare if the left run and right run are different.
+
+```{r, fig.width=10, fig.height=5}
+plotHemiDistancePsychometricCurves()
+```
+
+Seems that the bias effect of the blind spot might be a little bit smaller in the left hemifield. Let's test this.
+
+```{r}
+doHemiDistanceStats()
+```
+
+The PSE is still affected by the blind spot, but also by hemifield. The two also interact. No effects on slope.
+
+### Eye of origin
+
+Here we compare the left and right eye of origin. Note that the curves/data here should be the same as in the previous check (plot and stats), just shuffled in how they are assigned to conditions / factors.
+
+```{r fig.width=10, fig.height=5}
+plotOrigDistancePsychometricCurves()
+```
+
+Looks like the main effect is still there, but might depend a bit on the eye of origin.
+
+```{r}
+doOrigDistanceStats()
+```
+
+The effect of the location of the target pair persists. While there is no main effect of the eye of origin on the PSE, it does interact with the location of the target. No effects on slope.
+
 # Effect strength across participants
 
 Finally, we do a cursory check to see if participants with a large effect in the distance perception task also have a large effect in the curvature task. We do this by plotting the difference between the two conditions (at blind spot / away from blind spot) in the ipsi-lateral eye only for each participant in both tasks.
@@ -127,7 +182,7 @@ regressionEffectStrength()
 
 The NHST regression fails to reject the null hypothesis. The Bayesian linear model does not show evidence for the null hypothesis either.
 
-## Save figures as files
+## Export figures
 
 Each figure can be saved in various formats, for now, we just do PDFs.
 
@@ -138,6 +193,11 @@ for (target in c('pdf', 'svg')) {
   plotAreaDensityCurve(target=target)
   plotCurvaturePsychometricCurve(target=target)
   plotDistancePsychometricCurve(target=target)
+  
+  # checks, might not need them:
+  plotSplitDistancePsychometricCurves(target=target)
+  plotHemiDistancePsychometricCurves(target=target)
+  plotOrigDistancePsychometricCurves(target=target)
 }
 
 ```
