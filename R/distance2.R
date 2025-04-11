@@ -356,3 +356,102 @@ doDistanceStats <- function() {
 
 
 }
+
+## parameter distributions -----
+
+plotDistancePSEslope <- function(target='inline') {
+  
+  setupFigureFile( target = target, 
+                   width = 8, 
+                   height = 5, 
+                   dpi = 300, 
+                   filename = sprintf('doc/fig/%s/distance_pse_slope.%s', target, target))
+  
+  data <- getDistANOVAdata()
+  
+  layout(mat    = matrix( c(1,2),
+                          nrow=1,
+                          ncol=2,
+                          byrow=TRUE),
+         widths = c(1,1))
+  
+  for (parameter in c('mean','slope')) {
+    
+    varname <- list('mean'='bias', 'slope'='precision')[[parameter]]
+    
+    plot(NULL,NULL,
+         ylim=c(0.5,4.5),
+         xlim=list('mean'=c(-2,1), 'slope'=c(0,1))[[parameter]],
+         main=varname, ylab='', 
+         xlab=list('mean'='bias [dva]','slope'=expression(paste("precision [", Delta, "%/", Delta, "dva]")))[[parameter]],
+         ax=F, bty='n')
+    
+    if (parameter == 'mean') {
+      lines(y=c(0,5),x=c(0,0),col='gray',lty=3)
+    } else {
+      # lines(x=c(0,5),y=c(0,1),col='gray',lty=3)
+    }
+    
+    
+    info <- data.frame( eye  = c('ipsilateral','contralateral','ipsilateral','contralateral'),
+                        area = c('blindspot', 'blindspot',     'away',       'away'),
+                        col  = c('red',       'blue',          'orange',     'turquoise'))
+    
+    for (cond_no in c(1:nrow(info))) {
+     
+      cdat <- data[which(data$Eye == info$eye[cond_no] & data$Location == info$area[cond_no]),] 
+      
+      v <- cdat[,parameter]
+      
+      points(y=rep(cond_no, length(v)), 
+             x=v, 
+             col=Reach::colorAlpha(info$col[cond_no], alpha=100), 
+             pch=16)
+      
+      avg <- mean(v)
+      CI <- sd(v) / sqrt(length(v)) * qt(0.975, df=length(v)-1)
+      CI <- avg + c(CI*-1,CI)
+      
+      polygon(y = cond_no + c(-0.4, -0.2, -0.2, -0.4),
+              x = c(CI[1], CI[1], CI[2], CI[2]),
+              col = Reach::colorAlpha(info$col[cond_no], alpha=34), border=FALSE)
+      lines(y = cond_no + c(-0.4, -0.2), 
+            x = c(avg, avg), 
+            col=info$col[cond_no], lwd=2)
+      
+      dens <- density( x = v, 
+                       bw = 'nrd0', 
+                       adjust = 1, 
+                       kernel = 'gaussian', 
+                       from = list('mean'=-2, 'slope'=0 )[[parameter]],
+                       to = list('mean'=1, 'slope'=1 )[[parameter]], 
+                       n = 100)
+      
+      X <- dens$x
+      mf <- list('mean'=0.3, 'slope'=0.10)[[parameter]]
+      Y <- dens$y * mf + cond_no
+      
+      # print(c(X, max(X), rev(X), min(X)))
+      # print(c(Y, rep(cond_no, 2+length(Y))) + 0.2)
+
+      polygon(x = c(X, max(X), rev(X), min(X)),
+              y = c(Y, rep(cond_no, 2+length(Y))) + 0.2,
+              col = Reach::colorAlpha(info$col[cond_no], alpha=34), 
+              
+              border=FALSE)
+      lines(x=X, 
+            y=Y + 0.2,
+            col=info$col[cond_no], lwd=1)
+    }
+    
+    
+    axis(side=2, at=c(1,2,3,4), labels=c('ipsi\nat', 'contra\nat', 'ipsi\naway', 'contra\naway'), las=2)
+    axis(side=1, at=list('mean'=c(-2,-1,0,1),'slope'=c(0,0.5,1))[[parameter]])
+    
+  }
+  
+  if (target %in% c('svg','pdf','png','tiff')) {
+    dev.off()
+  }
+  
+}
