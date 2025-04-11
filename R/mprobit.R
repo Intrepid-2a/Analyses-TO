@@ -61,6 +61,8 @@ mprobit.nll <- function(p, x, y) {
   
   prob[which((prob-1) == 0)] <- 1-.Machine$double.eps
   
+  # this is the negative log likelihood,
+  # which (when minimized) should give the maximum likelihood estimate
   return(-sum(y * log(prob) + (1 - y) * log(1 - prob)))
   
 }
@@ -102,6 +104,35 @@ fit.mprobit <- function(x, y, start, lower, upper, maxit=1000) {
   
 }
 
+CI.mprobit <- function(data, start, lower, upper, maxit=1000, bootstraps=1000, n=100, from=NULL, to=NULL, interval=c(0.025, 0.975)) {
+  
+  # data is a data frame with the predictor and response variables ('x' and 'y')
+  #      as well as the observation ID ('ID')
+  #      'y' should be raw: an ecdf will be created for each bootstrap iteration
+  # start is a vector of starting values for the parameters
+  # lower is a vector of lower bounds for the parameters
+  # upper is a vector of upper bounds for the parameters
+  
+  # maxit is the maximum number of iterations for the optimization
+  # bootstraps is the number of bootstrap samples to generate
+  # n is the number of X values to estimate the CI at
+  # from is the minimum value of X (defaults to the lowest value in data)
+  # to is the maximum value of X (defaults to the highest value in data)
+  # interval is the confidence interval
+  
+  # fit the model using optim
+  fit <- optim(par=start,
+               fn=mprobit.nll,
+               x=data$Difference,
+               y=data$Targ_chosen,
+               method="L-BFGS-B",
+               lower=lower,
+               upper=upper,
+               control=list(maxit=maxit))
+  
+  return(fit)
+}
+
 
 # mprobit.se.fit <- function(par, x, y, newx) {
 #   
@@ -126,6 +157,34 @@ fit.mprobit <- function(x, y, start, lower, upper, maxit=1000) {
 # 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# test other fitting procedures ----
+# MLE would match the default procedure used in glm()
+# right now we use least squares minimization
 
 
 tests <- function() {
