@@ -1,11 +1,11 @@
 ---
 title: "Intrepid-2a replication analyses"
 author: "Marius 't Hart"
-date: "2025-04-10"
+date: "2025-04-11"
 output:
   word_document: default
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -60,7 +60,7 @@ getData()
 
 # Area task
 
-A first peek at the data, plotted as an emprirical cumulative distribution, fitted with a probit function:
+A first peek at the data, plotted as an empirical cumulative distribution, fitted with a probit function:
 
 ```{r fig.width=6.5, fig.height=5}
 plotAreaPsychometricCurve()
@@ -111,6 +111,14 @@ We can see differences in the bias, and perhaps in the slope. To test this stati
 ```{r}
 doDistanceStats()
 ```
+
+Let's plot the individual participant's PSEs and slopes in each condition to visually inspect for normality and outliers:
+
+```{r fig.width=8, fig.height=5}
+plotDistancePSEslope()
+```
+
+Seem normal enough.
 
 ## Checks on distance perception effects
 
@@ -195,6 +203,7 @@ for (target in c('pdf', 'svg')) {
   plotDistancePsychometricCurve(target=target)
   
   # checks, might not need them:
+  plotDistancePSEslope(target=target)
   plotSplitDistancePsychometricCurves(target=target)
   plotHemiDistancePsychometricCurves(target=target)
   plotOrigDistancePsychometricCurves(target=target)
