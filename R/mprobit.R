@@ -104,6 +104,28 @@ fit.mprobit <- function(x, y, start, lower, upper, maxit=1000) {
   
 }
 
+descr.mprobit <- function(p, prob=0.5, hs=0.0000001) {
+  
+  # p is a vector of parameters, in order:
+  # mean, sd, lower margin, upper margin
+  
+  # if p has only 3 parameters,
+  # the third is both the lower and upper margin:
+  if (length(p) == 3) {
+    p[4] <- p[3]
+  }
+  
+  # depending on the margins, the point where the probit function
+  # crosses 50% (or another probability) is not the mean of the distribution
+  prob <- ((prob - p[3]) / (1 - p[3] - p[4]))
+  PSE <- qnorm(prob, mean=p[1], sd=p[2])
+  # we also need to calculate the slope of the probit function at this point
+  slope <- (diff(mprobit(p=p, x=PSE+c(-hs, hs))) / (2*hs))
+  
+  return(list(PSE=PSE, slope=slope))
+  
+}
+
 CI.mprobit <- function(data, start, lower, upper, maxit=1000, bootstraps=1000, n=100, from=NULL, to=NULL, interval=c(0.025, 0.975)) {
   
   # data is a data frame with the predictor and response variables ('x' and 'y')
