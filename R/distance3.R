@@ -296,7 +296,9 @@ getSplitDistANOVAdata <- function() {
   
   df$mean  <- NA
   df$sd    <- NA
-  df$marg  <- NA
+  df$margL <- NA
+  df$margU <- NA
+  df$PSE   <- NA
   df$slope <- NA
   
   for (i in 1:nrow(df)) {
@@ -315,9 +317,12 @@ getSplitDistANOVAdata <- function() {
     
     df$mean[i] <- mod$par[1]
     df$sd[i]   <- mod$par[2]
-    df$marg[i] <- mod$par[3]
+    df$margL[i] <- mod$par[3]
+    df$margU[i] <- mod$par[4]
     
-    df$slope[i] <- diff(mprobit(p=mod$par, x=mod$par[1]+c(-.0000001, .0000001))) / (2*.0000001)
+    descr <- descr.mprobit(p=mod$par)
+    df$PSE[i]   <- descr$PSE
+    df$slope[i] <- descr$slope
     
   }
   
@@ -331,7 +336,7 @@ doSplitDistanceStats <- function() {
   # fit the model
   bias_aov <- afex::aov_ez(
     id = "participant",
-    dv = "mean",
+    dv = "PSE",
     data = data,
     within = c("Eye", "Location", "Foil"),
   )
@@ -562,7 +567,9 @@ getHemiDistANOVAdata <- function() {
   
   df$mean  <- NA
   df$sd    <- NA
-  df$marg  <- NA
+  df$margL <- NA
+  df$margU <- NA
+  df$PSE   <- NA
   df$slope <- NA
   
   for (i in 1:nrow(df)) {
@@ -581,9 +588,12 @@ getHemiDistANOVAdata <- function() {
     
     df$mean[i] <- mod$par[1]
     df$sd[i]   <- mod$par[2]
-    df$marg[i] <- mod$par[3]
+    df$margL[i] <- mod$par[3]
+    df$margU[i] <- mod$par[4]
     
-    df$slope[i] <- diff(mprobit(p=mod$par, x=mod$par[1]+c(-.0000001, .0000001))) / (2*.0000001)
+    descr <- descr.mprobit(p=mod$par)
+    df$PSE[i]   <- descr$PSE
+    df$slope[i] <- descr$slope
     
   }
   
@@ -597,7 +607,7 @@ doHemiDistanceStats <- function() {
   # fit the model
   bias_aov <- afex::aov_ez(
     id = "participant",
-    dv = "mean",
+    dv = "PSE",
     data = data,
     within = c("Eye", "Location", "Hemi"),
   )
@@ -818,7 +828,9 @@ getOrigDistANOVAdata <- function() {
   
   df$mean  <- NA
   df$sd    <- NA
-  df$marg  <- NA
+  df$margL <- NA
+  df$margU <- NA
+  df$PSE   <- NA
   df$slope <- NA
   
   for (i in 1:nrow(df)) {
@@ -837,9 +849,12 @@ getOrigDistANOVAdata <- function() {
     
     df$mean[i] <- mod$par[1]
     df$sd[i]   <- mod$par[2]
-    df$marg[i] <- mod$par[3]
+    df$margL[i] <- mod$par[3]
+    df$margU[i] <- mod$par[4]
     
-    df$slope[i] <- diff(mprobit(p=mod$par, x=mod$par[1]+c(-.0000001, .0000001))) / (2*.0000001)
+    descr <- descr.mprobit(p=mod$par)
+    df$PSE[i]   <- descr$PSE
+    df$slope[i] <- descr$slope
     
   }
   
@@ -853,7 +868,7 @@ doOrigDistanceStats <- function() {
   # fit the model
   bias_aov <- afex::aov_ez(
     id = "participant",
-    dv = "mean",
+    dv = "PSE",
     data = data,
     within = c("Eye", "Location", "Orig"),
   )
