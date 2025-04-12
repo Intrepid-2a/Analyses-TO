@@ -281,8 +281,9 @@ getDistANOVAdata <- function() {
   
   df$mean  <- NA
   df$sd    <- NA
-  df$margL  <- NA
-  df$margU  <- NA
+  df$margL <- NA
+  df$margU <- NA
+  df$PSE   <- NA
   df$slope <- NA
   
   for (i in 1:nrow(df)) {
@@ -307,7 +308,9 @@ getDistANOVAdata <- function() {
     df$margL[i] <- mod$par[3]
     df$margU[i] <- mod$par[4]
     
-    df$slope[i] <- diff(mprobit(p=mod$par, x=mod$par[1]+c(-.0000001, .0000001))) / (2*.0000001)
+    descr <- descr.mprobit(p=mod$par)
+    df$PSE[i]   <- descr$PSE
+    df$slope[i] <- descr$slope
     
   }
   
@@ -321,7 +324,7 @@ doDistanceStats <- function() {
   # fit the model
   bias_aov <- afex::aov_ez(
     id = "participant",
-    dv = "mean",
+    dv = "PSE",
     data = data,
     within = c("Eye", "Location"),
   )
@@ -334,7 +337,7 @@ doDistanceStats <- function() {
   
   bsl_bias_aov <- afex::aov_ez(
     id = "participant",
-    dv = "mean",
+    dv = "PSE",
     data = bs_data,
     within = c("Eye"),
   )
