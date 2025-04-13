@@ -222,7 +222,7 @@ plotSplitDistancePsychometricCurves <- function(target='inline') {
     }
     
     legend(x=0, y=0.5,
-           legend=c('ipsi, across', 'ipsi, away', 'contra, across', 'contra, away'),
+           legend=c('ipsi, at', 'ipsi, away', 'contra, at', 'contra, away'),
            lty=1, col=info$col,
            bty='n')
     
@@ -492,7 +492,7 @@ plotHemiDistancePsychometricCurves <- function(target='inline') {
     }
     
     legend(x=0, y=0.5,
-           legend=c('ipsi, across', 'ipsi, away', 'contra, across', 'contra, away'),
+           legend=c('ipsi, at', 'ipsi, away', 'contra, at', 'contra, away'),
            lty=1, col=info$col,
            bty='n')
     
@@ -751,7 +751,7 @@ plotOrigDistancePsychometricCurves <- function(target='inline') {
     }
     
     legend(x=0, y=0.5,
-           legend=c('ipsi, across', 'ipsi, away', 'contra, across', 'contra, away'),
+           legend=c('ipsi, at', 'ipsi, away', 'contra, at', 'contra, away'),
            lty=1, col=info$col,
            bty='n')
     
