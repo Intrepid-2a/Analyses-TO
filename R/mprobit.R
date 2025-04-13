@@ -110,7 +110,7 @@ fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper
   
 
   if (!is.null(IDs) & !is.null(data)) {
-    cat('creating data based on IDs\n')
+    # cat('creating data based on IDs\n')
     newdat <- NA
     for (ID in IDs) {
       if (is.data.frame(newdat)) {
@@ -170,7 +170,7 @@ descr.mprobit <- function(p, prob=0.5, hs=0.0000001) {
   
 }
 
-CI.mprobit <- function(data, clust=NULL, start, lower, upper, maxit=1000, iterations=1000, n=100, from=NULL, to=NULL, interval=c(0.025, 0.975)) {
+CI.mprobit <- function(data, cluster=NULL, start, lower, upper, maxit=1000, iterations=1000, n=100, from=NULL, to=NULL, interval=c(0.025, 0.975)) {
   
   # data is a data frame with the predictor and response variables ('x' and 'y')
   #      as well as the observation ID ('ID')
@@ -187,9 +187,9 @@ CI.mprobit <- function(data, clust=NULL, start, lower, upper, maxit=1000, iterat
   # interval is the confidence interval
   
   close_cluster <- FALSE
-  if (is.null(clust)) {
+  if (is.null(cluster)) {
     ncores  <- parallel::detectCores()
-    clust   <- parallel::makeCluster(max(c(1,floor(ncores*0.8))))
+    cluster   <- parallel::makeCluster(max(c(1,floor(ncores*0.5))))
     close_cluster <- TRUE
   }
   
@@ -199,7 +199,7 @@ CI.mprobit <- function(data, clust=NULL, start, lower, upper, maxit=1000, iterat
   
 
   # fit the model using optim
-  a <- parallel::parApply(cl = clust,
+  a <- parallel::parApply(cl = cluster,
                           X = BSparticipants,
                           MARGIN = 1,
                           FUN = fit.mprobit,
@@ -210,7 +210,7 @@ CI.mprobit <- function(data, clust=NULL, start, lower, upper, maxit=1000, iterat
                           maxit=1000
                           )
   
-  if (close_cluster) {stopCluster(clust)}
+  if (close_cluster) {stopCluster(cluster)}
   
   # all_fits <- as.data.frame(t(t(lapply(a, "[[", "par"))))
   all_fits <- matrix(unlist(lapply(a, "[[", "par")),nrow=iterations, byrow=TRUE)
