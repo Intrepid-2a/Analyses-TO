@@ -149,15 +149,16 @@ processDistanceData <- function() {
 #   
 # }
 
-plotDistancePsychometricCurve <- function(target='inline') {
+plotDistancePsychometricCurve <- function(target='inline', cluster=NULL) {
   
   
-  ncores   <- parallel::detectCores()
-  usecores <- max(c(1,floor(ncores*0.5)))
-  # usecores <- 16
-  clust    <- parallel::makeCluster(usecores)
-
-  parallel::clusterEvalQ(cl=clust, source('R/mprobit.R'))
+  # ncores   <- parallel::detectCores()
+  # usecores <- max(c(1,floor(ncores*0.5)))
+  # # usecores <- 16
+  # clust    <- parallel::makeCluster(usecores)
+  if (!is.null(cluster)) {
+    parallel::clusterEvalQ(cl=cluster, source('R/mprobit.R'))
+  }
   
   setupFigureFile( target = target, 
                    width = 5, 
@@ -219,15 +220,26 @@ plotDistancePsychometricCurve <- function(target='inline') {
     # mod <- allConditionModels[[sprintf('%s_%s', info$eye[cond_no], info$area[cond_no])]]
     # pred <- predict(mod, type = 'response', se.fit = TRUE, newdata=data.frame(Difference=seq(-3.5,3.5,0.1)))
     
-    CI <- CI.mprobit(data=data.frame(ID=cdf$participant,
+    if (is.null(cluster)) {
+      CI <- CI.mprobit.serial(data=data.frame(ID=cdf$participant,
                                x=cdf$Difference,
                                y=cdf$Targ_chosen),
-                     clust=clust,
-                     start = c(0, 1, 0, 0),
-                     lower = c(-3, 0.2, 0, 0),
-                     upper = c(3, 3, 0.3, 0.3),
-                     iterations = 1000,
-                     n = length(X))
+                             start = c(0, 1, 0, 0),
+                             lower = c(-3, 0.2, 0, 0),
+                             upper = c(3, 3, 0.3, 0.3),
+                             iterations = 1000,
+                             n = length(X))
+    } else {
+      CI <- CI.mprobit(data=data.frame(ID=cdf$participant,
+                                       x=cdf$Difference,
+                                       y=cdf$Targ_chosen),
+                       cluster=cluster,
+                       start = c(0, 1, 0, 0),
+                       lower = c(-3, 0.2, 0, 0),
+                       upper = c(3, 3, 0.3, 0.3),
+                       iterations = 1000,
+                       n = length(X))
+    }
     
     # print(str(CI))
     polygon(x = c(CI$X, rev(CI$X)),
@@ -249,7 +261,7 @@ plotDistancePsychometricCurve <- function(target='inline') {
     dev.off()
   }
   
-  parallel::stopCluster(clust)
+  # parallel::stopCluster(clust)
   
 }
 
@@ -382,6 +394,59 @@ doDistanceStats <- function() {
   print(slope_aov)
 
 
+}
+
+doDistanceBiasANOVA <- function() {
+  
+  data <- getDistANOVAdata()
+  
+  # fit the model
+  bias_aov <- afex::aov_ez(
+    id = "participant",
+    dv = "PSE",
+    data = data,
+    within = c("Eye", "Location"),
+  )
+  
+  # print(bias_aov)
+  knitr::kable(bias_aov$anova_table, digits=3)
+  
+}
+
+doDistanceBiasANOVAfollowup <- function() {
+  
+  data <- getDistANOVAdata()
+  
+  bs_data <- data[which(data$Location == "blindspot"),]
+  
+  bsl_bias_aov <- afex::aov_ez(
+    id = "participant",
+    dv = "PSE",
+    data = bs_data,
+    within = c("Eye"),
+  )
+  
+  # print(bsl_bias_aov)
+  knitr::kable(bsl_bias_aov$anova_table, digits=3)
+  
+  
+}
+
+doDistanceSlopeANOVA <- function() {
+  
+  data <- getDistANOVAdata()
+  
+  # fit the model
+  slope_aov <- afex::aov_ez(
+    id = "participant",
+    dv = "slope",
+    data = data,
+    within = c("Eye", "Location"),
+  )
+  
+  # print(slope_aov)
+  knitr::kable(slope_aov$anova_table, digits=3)
+  
 }
 
 ## parameter distributions -----

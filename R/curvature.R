@@ -354,3 +354,42 @@ doCurvatureStats <- function() {
   summary(cond_mod)
   
 }
+
+doCurvatureBiasANOVA <- function() {
+  
+  data <- getCurvatureANOVAdata()
+  
+  # fit the model
+  bias_aov <- afex::aov_ez(
+    id = "participant",
+    dv = "mean",
+    data = data,
+    within = c("Eye", "Location"),
+  )
+  
+  # cat("==== Curvature Bias ANOVA:\n\n")
+  
+  # print(bias_aov)
+  knitr::kable(bias_aov$anova_table, digits=3)
+  
+}
+
+doCurvatureSlopeANOVA <- function() {
+  
+  data <- getCurvatureANOVAdata()
+  
+  # fit the model
+  slope_aov <- afex::aov_ez(
+    id = "participant",
+    dv = "slope",
+    data = data,
+    within = c("Eye", "Location"),
+  )
+  
+  # cat("==== Curvature Bias ANOVA:\n\n")
+  
+  # print(bias_aov)
+  # knitr::kable(slope_aov$anova_table, digits=3)
+  knitr::kable(slope_aov$anova_table, digits=3)
+  
+}

@@ -504,3 +504,36 @@ doAreaStats <- function() {
   summary(cond_mod)
   
 }
+
+doAreaBiasANOVA <- function() {
+  data <- getAreaANOVAdata()
+  
+  # fit the model
+  bias_aov <- afex::aov_ez(
+    id = "participant",
+    dv = "mean",
+    data = data,
+    within = c("Eye", "Location"),
+  )
+  
+  # cat("==== Area Bias ANOVA:\n\n")
+  
+  # print(bias_aov)
+  knitr::kable(bias_aov$anova_table, digits=3)
+}
+
+doAreaSlopeANOVA <- function() {
+  data <- getAreaANOVAdata()
+  
+  slope_aov <- afex::aov_ez(
+    id = "participant",
+    dv = "slope",
+    data = data,
+    within = c("Eye", "Location"),
+  )
+  
+  # cat("\n==== Area SD ANOVA:\n\n")
+  
+  knitr::kable(slope_aov$anova_table, digits=3)
+  # print(slope_aov)
+}
