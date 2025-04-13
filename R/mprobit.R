@@ -57,13 +57,23 @@ mprobit.nll <- function(p, x, y) {
   
   prob <- mprobit(p, x)
   
-  # print(prob)
-  
+  # small step away from what log() can handle:
   prob[which((prob-1) == 0)] <- 1-.Machine$double.eps
+  y[which(y == 0)] <- .Machine$double.eps
   
   # this is the negative log likelihood,
   # which (when minimized) should give the maximum likelihood estimate
-  return(-sum(y * log(prob) + (1 - y) * log(1 - prob)))
+  nll <- -sum(y * log(prob) + (1 - y) * log(1 - prob))
+  # print(nll)
+  if (!is.finite(nll)) {
+    # if the nll is not finite, return a large number
+    # this will make optim() stop trying to fit the model
+    prob <- rep(.Machine$double.eps, length(x)) # flat function close to zero
+    nll <- -sum(y * log(prob) + (1 - y) * log(1 - prob))
+    # cat(sprintf('replace nll with %f\n', nll))
+  }
+
+  return(nll)
   
 }
 
@@ -71,18 +81,52 @@ mprobit.nll <- function(p, x, y) {
 #' @description 
 #' This function fits a probit regression model with min/max margins to the data.
 #' It uses the `mprobit` function to calculate the probit function with margins.
-#' It also uses the `mprobit.nll` function to calculate the negative log-likelihood for optimization.
+#' It also uses the `mprobit.nll` function to calculate the negative log-likelihood 
+#' for optimization.
+#' If IDs and data are specified, x and y are ignored.
+#' @param IDs A vector of observation IDs (any repetitions are used).
+#' @param data A data frame with the predictor and response variables ('x' and 'y')
+#' as well as an ID column.
 #' @param x A vector of predictor variables.
 #' @param y A vector of response variables (0 or 1).
 #' @param start A vector of starting values for the parameters.
 #' @param lower A vector of lower bounds for the parameters.
 #' @param upper A vector of upper bounds for the parameters.
 #' @param maxit The maximum number of iterations for the optimization.
+#' @param FUN The function to use for aggregation (default is `mean`).
 #' @export
-fit.mprobit <- function(x, y, start, lower, upper, maxit=1000) {
+fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper, maxit=1000, FUN=mean) {
+  
+  # this function will fit a probit function with margins to the data
+  # data can be specified in two ways:
+  # - using IDs and a data frame data (useful in bootstrap procedures)
+  # - using x and y vectors (useful for quick fits)
+  
+  # IDs is a vector of observation IDs (any repetitions are used)
+  # data is a data frame with the predictor and response variables ('x' and 'y') as well an ID column
   
   # x is a vector of predictor variables
-  # y is a vector of response variables (0 or 1)
+  # y is a vector of response variables (values between 0 or 1)
+  
+
+  if (!is.null(IDs) & !is.null(data)) {
+    cat('creating data based on IDs\n')
+    newdat <- NA
+    for (ID in IDs) {
+      if (is.data.frame(newdat)) {
+        newdat <- rbind(newdat, data[data$ID == ID, ])
+      } else {
+        newdat <- data[data$ID == ID, ]
+      }
+    }
+    aggdat <- aggregate(y ~ x, data=newdat, FUN=FUN)
+    x <- aggdat$x
+    y <- aggdat$y
+  } else {
+    if (is.null(x) | is.null(y)) {
+      stop('x and y must be specified if IDs and data are not provided')
+    }
+  }
   
   # start is a vector of starting values for the parameters
   # lower is a vector of lower bounds for the parameters
@@ -126,11 +170,11 @@ descr.mprobit <- function(p, prob=0.5, hs=0.0000001) {
   
 }
 
-CI.mprobit <- function(data, start, lower, upper, maxit=1000, bootstraps=1000, n=100, from=NULL, to=NULL, interval=c(0.025, 0.975)) {
+CI.mprobit <- function(data, clust=NULL, start, lower, upper, maxit=1000, iterations=1000, n=100, from=NULL, to=NULL, interval=c(0.025, 0.975)) {
   
   # data is a data frame with the predictor and response variables ('x' and 'y')
   #      as well as the observation ID ('ID')
-  #      'y' should be raw: an ecdf will be created for each bootstrap iteration
+  #      if there is a weights column, it will be used to aggregate the data
   # start is a vector of starting values for the parameters
   # lower is a vector of lower bounds for the parameters
   # upper is a vector of upper bounds for the parameters
@@ -142,146 +186,145 @@ CI.mprobit <- function(data, start, lower, upper, maxit=1000, bootstraps=1000, n
   # to is the maximum value of X (defaults to the highest value in data)
   # interval is the confidence interval
   
+  close_cluster <- FALSE
+  if (is.null(clust)) {
+    ncores  <- parallel::detectCores()
+    clust   <- parallel::makeCluster(max(c(1,floor(ncores*0.8))))
+    close_cluster <- TRUE
+  }
+  
+  participants <- unique(data$ID)
+  BSparticipants <- sample(participants, size=iterations*length(participants), replace=TRUE)
+  BSparticipants <- matrix(BSparticipants, nrow=iterations)
+  
+
   # fit the model using optim
-  fit <- optim(par=start,
-               fn=mprobit.nll,
-               x=data$Difference,
-               y=data$Targ_chosen,
-               method="L-BFGS-B",
-               lower=lower,
-               upper=upper,
-               control=list(maxit=maxit))
+  a <- parallel::parApply(cl = clust,
+                          X = BSparticipants,
+                          MARGIN = 1,
+                          FUN = fit.mprobit,
+                          data = data,
+                          start = start,
+                          lower = lower,
+                          upper = upper,
+                          maxit=1000
+                          )
   
-  return(fit)
-}
-
-
-# mprobit.se.fit <- function(par, x, y, newx) {
-#   
-#   # the output: se.fit
-#   # should be the standard error of the mean of the predicted value
-#   
-#   # par is a vector of parameters
-#   # x and y were used to thit the parameters
-#   # newx is where we want to predict new values
-#   
-#   r <- residual?
-#   # r <- residuals(mprobit(par, x, y))
-#   rss <- r^2
-#   df <- length(x) - length(par)
-#   res.var <- r / df
-#   
-# }
-
-
-# we could use instead, something like this:
-# - gls {nlme}
-# 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# test other fitting procedures ----
-# MLE would match the default procedure used in glm()
-# right now we use least squares minimization
-
-
-tests <- function() {
+  if (close_cluster) {stopCluster(clust)}
   
-  allData <- processDistanceData()
+  # all_fits <- as.data.frame(t(t(lapply(a, "[[", "par"))))
+  all_fits <- matrix(unlist(lapply(a, "[[", "par")),nrow=iterations, byrow=TRUE)
   
-  df <- allData[['ipsi_bsa']]
+  # evaluate all fits at the specified range / resolution:
+  if (is.null(from)) {
+    from <- min(data$x)
+  }
+  if (is.null(to)) {
+    to <- max(data$x)
+  }
+  newX <- seq(from, to, length.out=n)
   
-  # nls fits work:
   
-  # mod <- nls(Targ_chosen ~ mprobit(p, Difference),
-  #            data = df,
-  #            start = list(p = c(-0.5, 1, 0)),
-  #            # lower = c(-3, 0.2, 0, 0),
-  #            # upper = c(3, 3, 0.3, 0.3)
-  #            )
+  # calculate the probit function for each fit
+  # and for each newX value:
+  # this is a matrix with the probit function values
+  # for each fit (rows) and each newX value (columns)
+  probit_values <- matrix(NA, nrow=iterations, ncol=n)
+  for (i in seq_len(iterations)) {
+    probit_values[i, ] <- mprobit(p = all_fits[i, ], x = newX)
+  }
+  # calculate the mean and CI for each newX value
+  # this is a matrix with the mean and CI values
+  # for each newX value (rows) and each CI value (columns)
+  probit_CI <- matrix(NA, nrow=n, ncol=length(interval))
+  for (i in seq_len(n)) {
+    probit_CI[i, ] <- quantile(probit_values[, i], probs=interval)
+  }
+  # calculate the mean for each newX value
+  probit_mean <- apply(probit_values, 2, mean)
   
-  # nlrob also works:
-   
-  modr <- robustbase::nlrob(Targ_chosen ~ mprobit(p, Difference),
-                            data = df,
-                            start = list(p = c(-0.5, 1, 0)),
-                            # lower = list('p' = c(-3, 0.2, 0  )),
-                            # upper = list('p' = c( 3, 3,   0.3)),
-                            # method="mtl",
-                            doCov=TRUE
-                            )
+  # create a data frame with the newX values and the mean and CI values
+  probit_CI <- as.data.frame(probit_CI)
+  colnames(probit_CI) <- c('lo','hi')
+  probit_CI <- cbind(newX, probit_mean, probit_CI)
+  colnames(probit_CI)[1] <- 'X'
+  colnames(probit_CI)[2] <- 'mean'
   
-  fit <- fit.mprobit(x = df$Difference,
-              y = df$Targ_chosen,
-              start = c(-0.5, 1, 0),
-              lower = c(-3, 0.2, 0),
-              upper = c(3, 3, 0.3))
-  
-  r <- df$Targ_chosen - mprobit(fit$par, df$Difference)
-  rss <- sum(r^2)
-  df <- length(df$Difference) - length(par)
-  res.var <- rss / df
-  
-  rank <- 2 # 1 + n variables??
-  p <- rank
-  p1 <- seq_len(p)
-  
-  # I can not do the rest:
-  
-  # # qrX <- qr.lm(object))$pivot[p1]
-  # X <- model.matrix(~ Difference, data = df) # ????? 
-  # # X[, piv] %*% qr.solve(qr.R(qrX)[p1, p1])
-  # # ip <- drop(XRinv^2 %*% rep(res.var, p))
-  # 
-  # newX <- seq(-3.5,3.5,0.1)
-  # C <- matrix(data = c(rep(1,length(newX)), newX), nrow = length(newX), ncol = 2)
-  # 
-  # # C <- c(1, 1.5)
-  # std.er <- sqrt(t(C) %*% vcov(fit$par) %*% C)
+  return(probit_CI)
   
 }
 
 
-testMLE <- function() {
+CI.mprobit.serial <- function(data, start, lower, upper, maxit=1000, iterations=1000, n=100, from=NULL, to=NULL, interval=c(0.025, 0.975)) {
   
-  allData <- processDistanceData()
+  # data is a data frame with the predictor and response variables ('x' and 'y')
+  #      as well as the observation ID ('ID')
+  #      if there is a weights column, it will be used to aggregate the data
+  # start is a vector of starting values for the parameters
+  # lower is a vector of lower bounds for the parameters
+  # upper is a vector of upper bounds for the parameters
   
-  df <- allData[['ipsi_bsa']]
+  # maxit is the maximum number of iterations for the optimization
+  # bootstraps is the number of bootstrap samples to generate
+  # n is the number of X values to estimate the CI at
+  # from is the minimum value of X (defaults to the lowest value in data)
+  # to is the maximum value of X (defaults to the highest value in data)
+  # interval is the confidence interval
   
-  x = df$Difference
-  y = df$Targ_chosen
-  mlemod <- stats4::mle(minuslogl=mprobit.nll,
-                        start = list('p' = c(-0.5, 1, 0)),
-                        # fixed = list(x = x, y = y),
-                        method = "L-BFGS-B",
-                        lower = c(-3, 0.01, 0),
-                        upper = c(3, Inf, 0.3),
-                        x=x,
-                        y=y)
+  participants <- unique(data$ID)
+  BSparticipants <- sample(participants, size=iterations*length(participants), replace=TRUE)
+  BSparticipants <- matrix(BSparticipants, nrow=iterations)
   
   
-} 
+  # fit the model using optim
+  a <- apply( X = BSparticipants,
+              MARGIN = 1,
+              FUN = fit.mprobit,
+              data = data,
+              start = start,
+              lower = lower,
+              upper = upper,
+              maxit=1000
+  )
+  
+  # all_fits <- as.data.frame(t(t(lapply(a, "[[", "par"))))
+  all_fits <- matrix(unlist(lapply(a, "[[", "par")),nrow=iterations, byrow=TRUE)
+  
+  # evaluate all fits at the specified range / resolution:
+  if (is.null(from)) {
+    from <- min(data$x)
+  }
+  if (is.null(to)) {
+    to <- max(data$x)
+  }
+  newX <- seq(from, to, length.out=n)
+  
+  
+  # calculate the probit function for each fit
+  # and for each newX value:
+  # this is a matrix with the probit function values
+  # for each fit (rows) and each newX value (columns)
+  probit_values <- matrix(NA, nrow=iterations, ncol=n)
+  for (i in seq_len(iterations)) {
+    probit_values[i, ] <- mprobit(p = all_fits[i, ], x = newX)
+  }
+  # calculate the mean and CI for each newX value
+  # this is a matrix with the mean and CI values
+  # for each newX value (rows) and each CI value (columns)
+  probit_CI <- matrix(NA, nrow=n, ncol=length(interval))
+  for (i in seq_len(n)) {
+    probit_CI[i, ] <- quantile(probit_values[, i], probs=interval)
+  }
+  # calculate the mean for each newX value
+  probit_mean <- apply(probit_values, 2, mean)
+  
+  # create a data frame with the newX values and the mean and CI values
+  probit_CI <- as.data.frame(probit_CI)
+  colnames(probit_CI) <- c('lo','hi')
+  probit_CI <- cbind(newX, probit_mean, probit_CI)
+  colnames(probit_CI)[1] <- 'X'
+  colnames(probit_CI)[2] <- 'mean'
+  
+  return(probit_CI)
+  
+}

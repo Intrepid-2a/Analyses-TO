@@ -151,6 +151,14 @@ processDistanceData <- function() {
 
 plotDistancePsychometricCurve <- function(target='inline') {
   
+  
+  ncores   <- parallel::detectCores()
+  usecores <- max(c(1,floor(ncores*0.5)))
+  # usecores <- 16
+  clust    <- parallel::makeCluster(usecores)
+
+  parallel::clusterEvalQ(cl=clust, source('R/mprobit.R'))
+  
   setupFigureFile( target = target, 
                    width = 5, 
                    height = 5, 
@@ -189,33 +197,47 @@ plotDistancePsychometricCurve <- function(target='inline') {
     points(acdf, col=Reach::colorAlpha(scol, alpha=100))
     
     mprob <- fit.mprobit(y=acdf$Targ_chosen, x=acdf$Difference,
-                         start <- c( 0, 1,   0,   0   ),
-                         lower <- c(-3, 0.2, 0,   0   ),
-                         upper <- c( 3, 3,   0.3, 0.3 )
+                         start = c( 0, 1,   0,   0   ),
+                         lower = c(-3, 0.2, 0,   0   ),
+                         upper = c( 3, 3,   0.3, 0.3 )
                          )
     # mprob <- fit.mprobit(y=acdf$Targ_chosen, x=acdf$Difference, 
     #                      start <- c( 0, 1,   0   ),
     #                      lower <- c(-3, 0.2, 0   ),
     #                      upper <- c( 3, 3,   0.3 )
     #                     )
+
     X <- seq(-3.5,3.5,0.1)
     lines(x=X, y=mprobit(p=mprob$par, x=X), lwd = 1, col = scol)
+    
+    descr <- descr.mprobit(p=mprob$par)
+    PSE <- descr$PSE
+    lines(x = rep(PSE,2), y=c(0.5,0),
+          col=scol, lty=2)
+    
     
     # mod <- allConditionModels[[sprintf('%s_%s', info$eye[cond_no], info$area[cond_no])]]
     # pred <- predict(mod, type = 'response', se.fit = TRUE, newdata=data.frame(Difference=seq(-3.5,3.5,0.1)))
     
+    CI <- CI.mprobit(data=data.frame(ID=cdf$participant,
+                               x=cdf$Difference,
+                               y=cdf$Targ_chosen),
+                     clust=clust,
+                     start = c(0, 1, 0, 0),
+                     lower = c(-3, 0.2, 0, 0),
+                     upper = c(3, 3, 0.3, 0.3),
+                     iterations = 1000,
+                     n = length(X))
     
-        
-    # polygon(c(seq(-3.5,3.5,0.1), rev(seq(-3.5,3.5,0.1))),
-    #         c(pred$fit - pred$se.fit * 1.96, rev(pred$fit + pred$se.fit * 1.96)),
-    #         col = tcol, border = FALSE)
-    
-    # lines(pred$fit ~ seq(-3.5,3.5,0.1), lwd = 1, col = scol)
+    # print(str(CI))
+    polygon(x = c(CI$X, rev(CI$X)),
+            y = c(CI$lo, rev(CI$hi)),
+            col = tcol, border = FALSE)
     
   }
   
   legend(x=0, y=0.5,
-         legend=c('ipsilateral, across', 'ipsilateral, away', 'contralateral, across', 'contralateral, away'),
+         legend=c('ipsi, at', 'ipsi, away', 'contra, at', 'contra, away'),
          lty=1, col=info$col,
          bty='n')
   
@@ -226,6 +248,8 @@ plotDistancePsychometricCurve <- function(target='inline') {
   if (target %in% c('pdf','svg','png','tiff')) {
     dev.off()
   }
+  
+  parallel::stopCluster(clust)
   
 }
 
@@ -295,9 +319,9 @@ getDistANOVAdata <- function() {
     subdf <- data[data$participant == participant & data$Eye == eye & data$Location == location, ]
     
     mod <- fit.mprobit( y=subdf$Targ_chosen, x =subdf$Difference,
-                         start <- c(-0.5,   1, 0,   0  ),
-                         lower <- c(-3,   0.3, 0,   0  ),
-                         upper <- c( 3,     3, 0.3, 0.3) )
+                         start = c(-0.5,   1, 0,   0  ),
+                         lower = c(-3,   0.3, 0,   0  ),
+                         upper = c( 3,     3, 0.3, 0.3) )
     # mod <- fit.mprobit( y=subdf$Targ_chosen, x =subdf$Difference,
     #                     start <- c(-0.5,   1, 0   ),
     #                     lower <- c(-3,   0.3, 0   ),

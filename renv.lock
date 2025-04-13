@@ -9,15 +9,27 @@
     ]
   },
   "Packages": {
-    "DEoptimR": {
-      "Package": "DEoptimR",
-      "Version": "1.1-3-1",
+    "BayesFactor": {
+      "Package": "BayesFactor",
+      "Version": "0.9.12-4.7",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
-        "stats"
+        "Matrix",
+        "MatrixModels",
+        "R",
+        "Rcpp",
+        "RcppEigen",
+        "coda",
+        "graphics",
+        "hypergeo",
+        "methods",
+        "mvtnorm",
+        "pbapply",
+        "stringr",
+        "utils"
       ],
-      "Hash": "53a0299b56b4cbe418b12e3b65587211"
+      "Hash": "5dac49252d6f980e39b2f2d04dd09421"
     },
     "Deriv": {
       "Package": "Deriv",
@@ -351,6 +363,17 @@
       ],
       "Hash": "491c34d3d9dd0d2fe13d9f278bb90795"
     },
+    "coda": {
+      "Package": "coda",
+      "Version": "0.19-4.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "lattice"
+      ],
+      "Hash": "af436915c590afc6fffc3ce3a5be1569"
+    },
     "colorspace": {
       "Package": "colorspace",
       "Version": "2.1-1",
@@ -364,6 +387,13 @@
         "stats"
       ],
       "Hash": "d954cb1c57e8d8b756165d7ba18aa55a"
+    },
+    "contfrac": {
+      "Package": "contfrac",
+      "Version": "1.1-12",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "57120b229b87ba5206eb33c5b6f04f75"
     },
     "cowplot": {
       "Package": "cowplot",
@@ -416,6 +446,20 @@
         "R"
       ],
       "Hash": "e4f9e10b18f453a1b7eaf38247dad4fe"
+    },
+    "deSolve": {
+      "Package": "deSolve",
+      "Version": "1.40",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "grDevices",
+        "graphics",
+        "methods",
+        "stats"
+      ],
+      "Hash": "0a861334beb4eb8ca0d24a27b28b6679"
     },
     "digest": {
       "Package": "digest",
@@ -474,6 +518,17 @@
         "vctrs"
       ],
       "Hash": "fedd9d00c2944ff00a0e2696ccf048ec"
+    },
+    "elliptic": {
+      "Package": "elliptic",
+      "Version": "1.4-0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "MASS",
+        "R"
+      ],
+      "Hash": "4ad4fc696f70fece9399140246f409f3"
     },
     "evaluate": {
       "Package": "evaluate",
@@ -581,17 +636,6 @@
       ],
       "Hash": "5899f1eaa825580172bb56c08266f37c"
     },
-    "gnlm": {
-      "Package": "gnlm",
-      "Version": "1.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "rmutil"
-      ],
-      "Hash": "74e37b23c268a807594f798ff0b1a4bd"
-    },
     "gtable": {
       "Package": "gtable",
       "Version": "0.3.6",
@@ -656,6 +700,19 @@
         "openssl"
       ],
       "Hash": "ac107251d9d9fd72f0ca8049988f1d7f"
+    },
+    "hypergeo": {
+      "Package": "hypergeo",
+      "Version": "1.2-14",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "contfrac",
+        "deSolve",
+        "elliptic"
+      ],
+      "Hash": "96ef126b16f4e2574191bc1d91361193"
     },
     "isoband": {
       "Package": "isoband",
@@ -885,6 +942,17 @@
       ],
       "Hash": "4fd8900853b746af55b81fda99da7695"
     },
+    "mvtnorm": {
+      "Package": "mvtnorm",
+      "Version": "1.3-3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "stats"
+      ],
+      "Hash": "c7241e6be9d6df551a2e539a50f5c875"
+    },
     "nlme": {
       "Package": "nlme",
       "Version": "3.1-167",
@@ -968,6 +1036,17 @@
         "tibble"
       ],
       "Hash": "1f8c66528602fda4eef0c2e11eda5a57"
+    },
+    "pbapply": {
+      "Package": "pbapply",
+      "Version": "1.7-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "parallel"
+      ],
+      "Hash": "68a2d681e10cf72f0afa1d84d45380e5"
     },
     "pbkrtest": {
       "Package": "pbkrtest",
@@ -1162,31 +1241,6 @@
         "yaml"
       ],
       "Hash": "062470668513dcda416927085ee9bdc7"
-    },
-    "rmutil": {
-      "Package": "rmutil",
-      "Version": "1.1.10",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R"
-      ],
-      "Hash": "79c22a87416140a5c2252be2f89938dd"
-    },
-    "robustbase": {
-      "Package": "robustbase",
-      "Version": "0.99-4-1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "DEoptimR",
-        "R",
-        "graphics",
-        "methods",
-        "stats",
-        "utils"
-      ],
-      "Hash": "c4aa31d38787b63bddb050b175f52e3d"
     },
     "sass": {
       "Package": "sass",

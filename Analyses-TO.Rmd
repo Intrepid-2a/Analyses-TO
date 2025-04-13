@@ -118,7 +118,7 @@ Let's plot the individual participant's PSEs and slopes in each condition to vis
 plotDistancePSEslope()
 ```
 
-Seem normal enough.
+Seems normal enough.
 
 ## Checks on distance perception effects
 
@@ -156,11 +156,11 @@ Seems that the bias effect of the blind spot might be a little bit smaller in th
 doHemiDistanceStats()
 ```
 
-The PSE is still affected by the blind spot, but also by hemifield. The two also interact. No effects on slope.
+The PSE is still affected by the blind spot, but also by hemifield. The two also interact. Could have to do with filter quality. No effects on slope.
 
 ### Eye of origin
 
-Here we compare the left and right eye of origin. Note that the curves/data here should be the same as in the previous check (plot and stats), just shuffled in how they are assigned to conditions / factors.
+Here we compare the left and right eye of origin. Note that the curves/data here should be the same as in the previous check (both plot and stats), just shuffled in how they are assigned to conditions / factors. So in a sense it is redundant, but might help to better frame effects found above.
 
 ```{r fig.width=10, fig.height=5}
 plotOrigDistancePsychometricCurves()
@@ -172,7 +172,7 @@ Looks like the main effect is still there, but might depend a bit on the eye of 
 doOrigDistanceStats()
 ```
 
-The effect of the location of the target pair persists. While there is no main effect of the eye of origin on the PSE, it does interact with the location of the target. No effects on slope.
+The effect of the location of the target pair persists. While there is no main effect of the eye of origin on the PSE, it does interact with the location of the target. No effects on slope. This mirrors the results of the previous check (as expected).
 
 # Effect strength across participants
 
