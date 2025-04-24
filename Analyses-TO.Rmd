@@ -1,7 +1,7 @@
 ---
 title: "Intrepid-2a replication analyses"
 author: "Marius 't Hart"
-date: "2025-04-11"
+date: "2025-04-16"
 output:
   word_document: default
   pdf_document: default
@@ -24,7 +24,9 @@ Tasks:
 - curvature perception: staircase task; participants reply whether an apparent motion path is curved to the left or to the right, the paths are either right next to the blind spot or away from the blind spot
 - distance perception: staircase task; participants reply which of two dot pairs is further from each other, either one of the dot pairs spans the blind spot, or neither do
 
-# Setup Code
+# Setup
+
+## Source scripts
 
 First we load all the scripts to do the analyses:
 
@@ -50,12 +52,26 @@ source("R/area2.R")
 source("R/dist_curve.R")
 ```
 
-# Download Data
+## Download Data
 
 We download the data from a (private) OSF repository:
 
 ```{r eval=F}
 getData()
+```
+
+## Set up cluster for parallel processing
+
+```{r}
+parallelize <- TRUE
+if (parallelize) {
+  ncores   <- parallel::detectCores()
+  usecores <- max(c(1,floor(ncores*0.5)))
+  # usecores <- 16
+  cluster    <- parallel::makeCluster(usecores)
+} else {
+  cluster <- NULL
+}
 ```
 
 # Area task
@@ -174,11 +190,28 @@ doOrigDistanceStats()
 
 The effect of the location of the target pair persists. While there is no main effect of the eye of origin on the PSE, it does interact with the location of the target. No effects on slope. This mirrors the results of the previous check (as expected).
 
+### First stimulus
+
+Here we compare if the order of presenting stimuli matters for the main effect. I.e. if the first presented dot pair captures attention, the perception of the second stimuli might be affected.
+
+```{r, fig.width=10, fig.height=5}
+plotFirstDistancePsychometricCurves()
+```
+
+Seems that the main effect is still there. It could be that the slope is affected when the target is presented second, at the contralaterally and across the blind spot.
+
+```{r}
+doFirstDistanceStats()
+```
+
+The order of presentation does have an effect on the PSE, but so do the location of the target and the eye of presentation. No effect on slope.
+
+
 # Effect strength across participants
 
 Finally, we do a cursory check to see if participants with a large effect in the distance perception task also have a large effect in the curvature task. We do this by plotting the difference between the two conditions (at blind spot / away from blind spot) in the ipsi-lateral eye only for each participant in both tasks.
 
-```{r fig.width=7, fig.height=5}
+```{r fig.width=4, fig.height=4}
 plotEffectStrength()
 ```
 
@@ -188,11 +221,11 @@ That doesn't look like much. Here is a regression on this data:
 regressionEffectStrength()
 ```
 
-The NHST regression fails to reject the null hypothesis. The Bayesian linear model does not show evidence for the null hypothesis either.
+The NHST regression fails to reject the null hypothesis. The Bayesian linear model does not show evidence for the null hypothesis either. No message.
 
 ## Export figures
 
-Each figure can be saved in various formats, for now, we just do PDFs.
+Each figure can be saved in various formats, for now, we just do PDF and SVGs.
 
 ```{r}
 
@@ -200,7 +233,7 @@ for (target in c('pdf', 'svg')) {
   plotAreaPsychometricCurve(target=target)
   plotAreaDensityCurve(target=target)
   plotCurvaturePsychometricCurve(target=target)
-  plotDistancePsychometricCurve(target=target)
+  plotDistancePsychometricCurve(target=target, cluster=cluster)
   
   # checks, might not need them:
   plotDistancePSEslope(target=target)
@@ -209,5 +242,13 @@ for (target in c('pdf', 'svg')) {
   plotOrigDistancePsychometricCurves(target=target)
 }
 
+```
+
+## Close cluster
+
+```{r}
+if (parallelize) {
+  parallel::stopCluster(cluster)
+}
 ```
 
