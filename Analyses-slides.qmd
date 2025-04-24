@@ -1,0 +1,245 @@
+---
+title: "Intrepid 2a replication"
+authors: "Marius 't Hart, Patrick Cavanagh"
+date: "2025-04-14"
+format: pptx
+# format: revealjs
+editor: visual
+---
+
+## Overview
+
+```{r eval=T, echo=FALSE}
+# this script has function to download the data:
+source("R/data.R")
+# this script contains generic utility functions:
+source("R/utilities.R")
+# script with custom psychometric functions:
+source("R/mprobit.R")
+
+# this script contains functions to process the distance task data:
+source('R/distance2.R')
+source('R/distance3.R') # checks on original tests
+# this script contains functions to process the curvature task data:
+source('R/curvature.R')
+# this script contains functions to process the area task data:
+source("R/area.R")
+# alternative just using a Gaussian density distribution:
+source("R/area2.R")
+
+# scripts testing relations between effects in distance and curvature task:
+source("R/dist_curve.R")
+
+# set up parallelization:
+parallelize <- TRUE
+if (parallelize) {
+  ncores   <- parallel::detectCores()
+  usecores <- max(c(1,floor(ncores*0.5)))
+  # usecores <- 16
+  cluster    <- parallel::makeCluster(usecores)
+} else {
+  cluster <- NULL
+}
+```
+
+::: {.incremental}
+- Almost complete (1 more participant)
+- Fit a probit function to each participant's data
+- Allows separate tests on bias and slope
+- Custom fitting for the distance task
+:::
+
+## Area perception
+
+:::: {.columns}
+
+::: {.column width="67%" .incremental}
+```{r fig.width=6, fig.height=5}
+plotAreaPsychometricCurve()
+```
+:::
+
+::: {.column width="33%" .incremental}
+- no effects
+:::
+
+::::
+
+## Curvature perception data
+
+:::: {.columns}
+
+::: {.column width="67%" .incremental}
+```{r fig.width=6, fig.height=5}
+plotCurvaturePsychometricCurve()
+```
+:::
+
+::: {.column width="33%" .incremental}
+- small effect of location (away vs across) on bias
+- no effects on slope
+:::
+
+::::
+
+## Distance perception data
+
+:::: {.columns}
+
+::: {.column width="67%" .incremental}
+```{r fig.width=6, fig.height=5}
+plotDistancePsychometricCurve(cluster=cluster)
+```
+:::
+
+::: {.column width="33%" .incremental}
+- effect of location (away vs across) on bias
+- effect of eye (ipsi vs contra) on bias at the across locations
+- small effect of location on slope
+:::
+
+::::
+
+## Thanks!
+
+
+## Distance parameter distributions
+
+:::: {.columns}
+
+::: {.column width="75%" .incremental}
+```{r fig.width=8, fig.height=5}
+plotDistancePSEslope()
+```
+:::
+
+::: {.column width="25%" .incremental}
+ 
+:::
+
+::::
+
+## Distance effect of foil location
+
+:::: {.columns}
+
+::: {.column width="75%" .incremental}
+```{r fig.width=9, fig.height=5}
+plotSplitDistancePsychometricCurves()
+```
+:::
+
+::: {.column width="25%" .incremental}
+- foil location (above / below blind spot) has some effect
+- main effect of location remains
+:::
+
+::::
+
+## Distance effect of stimulated eye
+
+:::: {.columns}
+
+::: {.column width="75%" .incremental}
+```{r fig.width=9, fig.height=5}
+plotOrigDistancePsychometricCurves()
+```
+:::
+
+::: {.column width="25%" .incremental}
+- stimulated eye relates to filter used (green vs. red)
+- main effect of location remains
+:::
+
+::::
+
+## Distance effect of hemifield
+
+:::: {.columns}
+
+::: {.column width="75%" .incremental}
+```{r fig.width=9, fig.height=5}
+plotHemiDistancePsychometricCurves()
+```
+:::
+
+::: {.column width="25%" .incremental}
+- essentially the same as splitting by eye of origin
+- main effect of location remains
+:::
+
+::::
+
+## Distance effect of first dot-pair
+
+:::: {.columns}
+
+::: {.column width="75%" .incremental}
+```{r fig.width=9, fig.height=5}
+plotFirstDistancePsychometricCurves()
+```
+:::
+
+::: {.column width="25%" .incremental}
+- some small differences, but
+- main effect of location remains
+:::
+
+::::
+
+## Area perception bias
+
+```{r}
+doAreaBiasANOVA()
+```
+
+## Area perception slope
+
+```{r}
+doAreaSlopeANOVA()
+```
+
+## Curvature perception bias
+
+```{r}
+doCurvatureBiasANOVA()
+```
+
+## Curvature perception slope
+
+```{r}
+doCurvatureSlopeANOVA()
+```
+
+## Distance perception bias
+
+```{r}
+doDistanceBiasANOVA()
+```
+
+## Distance perception bias follow-up
+
+```{r}
+doDistanceBiasANOVAfollowup()
+```
+
+## Distance perception slope
+
+```{r}
+doDistanceSlopeANOVA()
+```
+
+## Summary of findings
+
+::: {.incremental}
+- Area:
+  - no significant effects
+- Curvature:
+  - small effect of location (away vs across) on bias
+- Distance
+  - significant effect of location (ipsi vs contra) on bias
+  - contralateral eye shows larger effect than ipsilateral
+  - small effect of location on slope
+:::
+
+
