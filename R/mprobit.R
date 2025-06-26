@@ -1,7 +1,7 @@
 
 
 # probit with min/max margins
-mprobit <- function(p, x) {
+mprobit <- function(p, x, fixed=NULL) {
   
   # p is a vector of parameters
   # the first two are the regular parameters of the normal distribution:
@@ -9,65 +9,63 @@ mprobit <- function(p, x) {
   # p[2] is the standard deviation
   
   # the second two parameters set the bounds:
-  # p[3] is the lower margin
-  # p[4] is the upper margin
+  # p[3] is the lapse rate
+  # p[4] is the guess rate
   
   # if only 3 parameters are given,
   # it is taken to be both the upper and lower margin
   
+  if (length(p) == 2) {
+    p[3] <- 0
+  }
+  
   if (length(p) == 3) {
-    p[4] <- p[3]
+    p[4] <- 0
+  }
+  
+  if (!is.null(fixed)) {
+    for (fp in c(1:length(fixed))) {
+      if (!is.na(fixed[fp])) {
+        p[fp] <- fixed[fp]
+      }
+    }
   }
   
   # p[3] + p[4] has to be lower than 1:
-  if (p[3] + p[4] >= 1) {
+  if (p[3] >= 0.5) {
     cat('warning: impossible margins (returning zeroes)\n')
     return(rep(0, length(x))) # might need to have a better value to return in case if invalid bounds
   }
   
-  # x is a vector of values
+  # x is a vector of stimulus intensities
   
-  # probit is implemented in R as the pnorm function,
-  # but we add bounds:
-  # print(p[1])
-  # print(p[2])
-  # print(x)
-  # print(pnorm(x, mean=p[1], sd=p[2] ))
+  # probit is implemented in R as the pnorm function
   
-  return( p[3] + ((1 - p[3] - p[4]) * pnorm(x, mean=p[1], sd=p[2], lower.tail=TRUE, log.p=FALSE)) )
+  return( p[4] + (0.5 * p[3]) + ((1 - p[3] - p[4]) * pnorm(x, mean=p[1], sd=p[2], lower.tail=TRUE, log.p=FALSE)) )
   
 }
 
-mprobit.nll <- function(p, x, y) {
+mprobit.nll <- function(p, x, y, fixed=NULL) {
   
   # p is a vector of parameters
-  # the first two are the regular parameters of the normal distribution:
-  # p[1] is the mean
-  # p[2] is the standard deviation
-  
-  # the second two parameters set the bounds:
-  # p[3] is the lower margin
-  # p[4] is the upper margin
+  # it is not used here, but passed on to `mprobit()`
   
   # x is a vector of values
   # y is a vector of values (0 or 1)
   
-  # probit is implemented in R as the pnorm function,
-  # but we add bounds:
+  prob <- mprobit(p, x, fixed=fixed)
   
-  prob <- mprobit(p, x)
-  
-  # small step away from what log() can handle:
+  # small step away from what log() can not handle:
   prob[which((prob-1) == 0)] <- 1-.Machine$double.eps
   y[which(y == 0)] <- .Machine$double.eps
   
   # this is the negative log likelihood,
-  # which (when minimized) should give the maximum likelihood estimate
+  # which (when minimized) gives the same fit as maximizing the likelihood
   nll <- -sum(y * log(prob) + (1 - y) * log(1 - prob))
   # print(nll)
   if (!is.finite(nll)) {
     # if the nll is not finite, return a large number
-    # this will make optim() stop trying to fit the model
+    # this will make optim() stop trying to fit the model this way...
     prob <- rep(.Machine$double.eps, length(x)) # flat function close to zero
     nll <- -sum(y * log(prob) + (1 - y) * log(1 - prob))
     # cat(sprintf('replace nll with %f\n', nll))
@@ -95,7 +93,7 @@ mprobit.nll <- function(p, x, y) {
 #' @param maxit The maximum number of iterations for the optimization.
 #' @param FUN The function to use for aggregation (default is `mean`).
 #' @export
-fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper, maxit=1000, FUN=mean) {
+fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper, maxit=1000, FUN=mean, fixed=NULL) {
   
   # this function will fit a probit function with margins to the data
   # data can be specified in two ways:
@@ -131,14 +129,23 @@ fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper
   # start is a vector of starting values for the parameters
   # lower is a vector of lower bounds for the parameters
   # upper is a vector of upper bounds for the parameters
+  # fixed is a vactor of fixed values for the parameters, where free parameters are NA
+  
+  if (is.null(fixed)) {
+    fixed <- rep(NA, length(start))
+    fixed <- c(fixed, rep(0, 4-(length(start))))
+  }
+  
   
   # maxit is the maximum number of iterations for the optimization
+  # maybe we can just take the whole control thing as input?
   
   # fit the model using optim
   fit <- optim(par=start,
                fn=mprobit.nll,
                x=x,
                y=y,
+               fixed=fixed,
                method="L-BFGS-B",
                lower=lower,
                upper=upper,
@@ -148,23 +155,36 @@ fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper
   
 }
 
-descr.mprobit <- function(p, prob=0.5, hs=0.0000001) {
+descr.mprobit <- function(p, prob=0.5) {
   
   # p is a vector of parameters, in order:
   # mean, sd, lower margin, upper margin
+  # the first two are mandatory, the last two are optional
   
-  # if p has only 3 parameters,
+  # if p has fewer than 4 parameters, the PSE is straightforward:
   # the third is both the lower and upper margin:
-  if (length(p) == 3) {
-    p[4] <- p[3]
+  if (length(p) < 4) {
+    PSE <- p[1]
+    if (length(p) == 2) {
+      p[3] <- 0
+      p[4] <- 0
+    } else {
+      p[4] <- 0
+    }
+  } else {
+    # depending on the margins, the point where the probit function
+    # crosses 50% (or another probability) is not the mean of the distribution
+    # prob <- (p[4] + (prob - p[3]) / (1 - p[3] - p[4])) # when p[3] and p[4] were lower and upper margins
+    prob <- ((prob - (p[3]/2) - p[4]) / (1 - (p[3]) - p[4]))
+    PSE <- qnorm(prob, mean=p[1], sd=p[2])
   }
   
-  # depending on the margins, the point where the probit function
-  # crosses 50% (or another probability) is not the mean of the distribution
-  prob <- ((prob - p[3]) / (1 - p[3] - p[4]))
-  PSE <- qnorm(prob, mean=p[1], sd=p[2])
   # we also need to calculate the slope of the probit function at this point
-  slope <- (diff(mprobit(p=p, x=PSE+c(-hs, hs))) / (2*hs))
+  # numerically (with hs a really small number):
+  # slope <- (diff(mprobit(p=p, x=PSE+c(-hs, hs))) / (2*hs))
+  
+  # analytically: slope of pnorm is dnorm
+  slope <- ((1 - p[3] - p[4]) / 1) * dnorm(PSE, mean=p[1], sd=p[2])
   
   return(list(PSE=PSE, slope=slope))
   
@@ -186,9 +206,14 @@ CI.mprobit <- function(data, cluster=NULL, start, lower, upper, maxit=1000, iter
   # to is the maximum value of X (defaults to the highest value in data)
   # interval is the confidence interval
   
+  
+  
+  # any(class(cluster) == "cluster")
+  
+  
   close_cluster <- FALSE
   if (is.null(cluster)) {
-    ncores  <- parallel::detectCores()
+    ncores    <- parallel::detectCores()
     cluster   <- parallel::makeCluster(max(c(1,floor(ncores*0.5))))
     close_cluster <- TRUE
   }

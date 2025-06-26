@@ -201,9 +201,9 @@ plotSplitDistancePsychometricCurves <- function(target='inline') {
       points(acdf, col=Reach::colorAlpha(scol, alpha=100))
       
       mprob <- fit.mprobit(y=acdf$Targ_chosen, x=acdf$Difference, 
-                           start = c( 0,   1, 0,   0  ),
-                           lower = c(-3, 0.2, 0,   0  ),
-                           upper = c( 3,   3, 0.3, 0.3)
+                           start = c( 0,   1, 0   ),
+                           lower = c(-3, 0.2, 0   ),
+                           upper = c( 3,   3, 0.3 )
       )
       X <- seq(-3.5,3.5,0.1)
       lines(x=X, y=mprobit(p=mprob$par, x=X), lwd = 1, col = scol)
@@ -311,9 +311,9 @@ getSplitDistANOVAdata <- function() {
     subdf <- data[data$participant == participant & data$Eye == eye & data$Location == location & data$Foil == foil, ]
     
     mod <- fit.mprobit( y=subdf$Targ_chosen, x =subdf$Difference,
-                         start = c(-0.5,   1, 0,   0  ),
-                         lower = c(-3,   0.3, 0,   0  ),
-                         upper = c( 3,     3, 0.3, 0.3) )
+                         start = c(-0.5,   1, 0  ),
+                         lower = c(-3,   0.3, 0  ),
+                         upper = c( 3,     3, 0.3) )
     
     df$mean[i] <- mod$par[1]
     df$sd[i]   <- mod$par[2]
@@ -582,9 +582,9 @@ getHemiDistANOVAdata <- function() {
     subdf <- data[data$participant == participant & data$Eye == eye & data$Location == location & data$Hemi == hemi, ]
     
     mod <- fit.mprobit( y=subdf$Targ_chosen, x =subdf$Difference,
-                        start = c(-0.5,   1, 0,   0  ),
-                        lower = c(-3,   0.3, 0,   0  ),
-                        upper = c( 3,     3, 0.3 ,0.3) )
+                        start = c(-0.5,   1, 0  ),
+                        lower = c(-3,   0.3, 0  ),
+                        upper = c( 3,     3, 0.3) )
     
     df$mean[i] <- mod$par[1]
     df$sd[i]   <- mod$par[2]
