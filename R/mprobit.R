@@ -31,7 +31,8 @@ mprobit <- function(p, x, fixed=NULL) {
     }
   }
   
-  # p[3] + p[4] has to be lower than 1:
+  # p[3] + p[4] has to be lower than 1...
+  # only checking p[3] for now, and it should be much lower than 0.5 anyway...
   if (p[3] >= 0.5) {
     cat('warning: impossible margins (returning zeroes)\n')
     return(rep(0, length(x))) # might need to have a better value to return in case if invalid bounds
@@ -45,7 +46,7 @@ mprobit <- function(p, x, fixed=NULL) {
   
 }
 
-mprobit.nll <- function(p, x, y, fixed=NULL) {
+mprobit.nll <- function(p, x, y, fixed=NULL, w=NULL) {
   
   # p is a vector of parameters
   # it is not used here, but passed on to `mprobit()`
@@ -59,18 +60,27 @@ mprobit.nll <- function(p, x, y, fixed=NULL) {
   prob[which((prob-1) == 0)] <- 1-.Machine$double.eps
   y[which(y == 0)] <- .Machine$double.eps
   
+  
+  if (is.null(w)) {
+    # if weights are not provided, set them to 1
+    w <- 1
+  }
+  
   # this is the negative log likelihood,
   # which (when minimized) gives the same fit as maximizing the likelihood
-  nll <- -sum(y * log(prob) + (1 - y) * log(1 - prob))
+  nll <- -sum( (y * log(prob) + (1 - y) * log(1 - prob) ) * (w / sum(w)) )
   # print(nll)
   if (!is.finite(nll)) {
     # if the nll is not finite, return a large number
+    # why would we do this again? I guess in case the data give weird results
+    # but could it also be an honest weird part of the solution space?
+    
     # this will make optim() stop trying to fit the model this way...
     prob <- rep(.Machine$double.eps, length(x)) # flat function close to zero
     nll <- -sum(y * log(prob) + (1 - y) * log(1 - prob))
-    # cat(sprintf('replace nll with %f\n', nll))
+    cat(sprintf('replace nll with %f\n', nll))
   }
-
+  
   return(nll)
   
 }
@@ -93,7 +103,7 @@ mprobit.nll <- function(p, x, y, fixed=NULL) {
 #' @param maxit The maximum number of iterations for the optimization.
 #' @param FUN The function to use for aggregation (default is `mean`).
 #' @export
-fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper, maxit=1000, FUN=mean, fixed=NULL) {
+fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper, maxit=1000, FUN=mean, fixed=NULL, w=NULL) {
   
   # this function will fit a probit function with margins to the data
   # data can be specified in two ways:
@@ -117,9 +127,15 @@ fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper
         newdat <- data[data$ID == ID, ]
       }
     }
+    newdat$w <- 1
     aggdat <- aggregate(y ~ x, data=newdat, FUN=FUN)
+    weights <- aggregate(w ~ x, data=newdat, FUN=sum)
+    
     x <- aggdat$x
     y <- aggdat$y
+    if (is.null(w)) {
+      w <- weights$w
+    }
   } else {
     if (is.null(x) | is.null(y)) {
       stop('x and y must be specified if IDs and data are not provided')
@@ -136,7 +152,6 @@ fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper
     fixed <- c(fixed, rep(0, 4-(length(start))))
   }
   
-  
   # maxit is the maximum number of iterations for the optimization
   # maybe we can just take the whole control thing as input?
   
@@ -146,6 +161,7 @@ fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper
                x=x,
                y=y,
                fixed=fixed,
+               w=w,
                method="L-BFGS-B",
                lower=lower,
                upper=upper,
@@ -158,7 +174,7 @@ fit.mprobit <- function(IDs=NULL, data=NULL, x=NULL, y=NULL, start, lower, upper
 descr.mprobit <- function(p, prob=0.5) {
   
   # p is a vector of parameters, in order:
-  # mean, sd, lower margin, upper margin
+  # mean, sd, lapse rate, guess rate
   # the first two are mandatory, the last two are optional
   
   # if p has fewer than 4 parameters, the PSE is straightforward:

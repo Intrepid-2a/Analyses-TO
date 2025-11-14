@@ -248,10 +248,10 @@ plotDistHorizontalPsychometricCurve <- function(target='inline', cluster=NULL) {
   }
   
   setupFigureFile( target = target, 
-                   width = 5, 
-                   height = 5, 
+                   width = 6, 
+                   height = 6, 
                    dpi = 300, 
-                   filename = sprintf('doc/fig/%s/distance_psychometric.%s', target, target))
+                   filename = sprintf('doc/fig/%s/distHorizontal_psychometric.%s', target, target))
   
   
   allConditionData <- processDistHorizontalData()
@@ -284,16 +284,16 @@ plotDistHorizontalPsychometricCurve <- function(target='inline', cluster=NULL) {
     lines(acdf, col=Reach::colorAlpha(scol, alpha=100))
     # points(acdf, col=Reach::colorAlpha(scol, alpha=100))
     
+    # mprob <- fit.mprobit(y=acdf$Targ_chosen, x=acdf$Difference,
+    #                      start = c( 0, 1,   0,   0   ),
+    #                      lower = c(-3, 0.2, 0,   0   ),
+    #                      upper = c( 3, 3,   0.3, 0.3 )
+    #)
     mprob <- fit.mprobit(y=acdf$Targ_chosen, x=acdf$Difference,
-                         start = c( 0, 1,   0,   0   ),
-                         lower = c(-3, 0.2, 0,   0   ),
-                         upper = c( 3, 3,   0.3, 0.3 )
-    )
-    # mprob <- fit.mprobit(y=acdf$Targ_chosen, x=acdf$Difference, 
-    #                      start <- c( 0, 1,   0   ),
-    #                      lower <- c(-3, 0.2, 0   ),
-    #                      upper <- c( 3, 3,   0.3 )
-    #                     )
+                         start = c( 0, 1,   0   ),
+                         lower = c(-3, 0.2, 0   ),
+                         upper = c( 3, 3,   0.3 )
+                         )
     
     X <- seq(-3.5,3.5,0.1)
     lines(x=X, y=mprobit(p=mprob$par, x=X), lwd = 1, col = scol)
@@ -311,9 +311,12 @@ plotDistHorizontalPsychometricCurve <- function(target='inline', cluster=NULL) {
       CI <- CI.mprobit.serial(data=data.frame(ID=cdf$participant,
                                               x=cdf$Difference,
                                               y=cdf$Targ_chosen),
-                              start = c(0, 1, 0, 0),
-                              lower = c(-3, 0.2, 0, 0),
-                              upper = c(3, 3, 0.3, 0.3),
+                              # start = c(0, 1, 0, 0),
+                              # lower = c(-3, 0.2, 0, 0),
+                              # upper = c(3, 3, 0.3, 0.3),
+                              start = c( 0, 1,   0   ),
+                              lower = c(-3, 0.2, 0   ),
+                              upper = c( 3, 3,   0.3 ),
                               iterations = 1000,
                               n = length(X))
     } else {
@@ -321,9 +324,12 @@ plotDistHorizontalPsychometricCurve <- function(target='inline', cluster=NULL) {
                                        x=cdf$Difference,
                                        y=cdf$Targ_chosen),
                        cluster=cluster,
-                       start = c(0, 1, 0, 0),
-                       lower = c(-3, 0.2, 0, 0),
-                       upper = c(3, 3, 0.3, 0.3),
+                       # start = c(0, 1, 0, 0),
+                       # lower = c(-3, 0.2, 0, 0),
+                       # upper = c(3, 3, 0.3, 0.3),
+                       start = c( 0, 1,   0   ),
+                       lower = c(-3, 0.2, 0   ),
+                       upper = c( 3, 3,   0.3 ),
                        iterations = 1000,
                        n = length(X))
     }
@@ -340,7 +346,7 @@ plotDistHorizontalPsychometricCurve <- function(target='inline', cluster=NULL) {
          lty=1, col=info$col,
          bty='n')
   
-  axis(side=1, at=c(-3.5,-2,-1,0,1,2,3.5))
+  axis(side=1, at=c(-3,-2,-1,0,1,2,3))
   axis(side=2, at=c(0,0.5,1))
   
   
@@ -406,23 +412,24 @@ getDistHorANOVAdata <- function() {
   
   df$mean  <- NA
   df$sd    <- NA
-  df$margL <- NA
-  df$margU <- NA
+  # df$margL <- NA
+  # df$margU <- NA
+  df$LR    <- NA
   df$PSE   <- NA
   df$slope <- NA
   
   for (i in 1:nrow(df)) {
     participant <- df$participant[i]
-    eye        <- df$Eye[i]
-    location   <- df$Location[i]
+    eye         <- df$Eye[i]
+    location    <- df$Location[i]
     
     # filter the data for the current combination
     subdf <- data[data$participant == participant & data$Eye == eye & data$Location == location, ]
     
     mod <- fit.mprobit( y=subdf$Targ_chosen, x =subdf$Difference,
-                        start = c(-0.5,   1, 0,   0  ),
-                        lower = c(-3,   0.3, 0,   0  ),
-                        upper = c( 3,     3, 0.3, 0.3) )
+                        start = c(-0.5,   1, 0  ),
+                        lower = c(-3,   0.3, 0  ),
+                        upper = c( 3,     3, 0.3) )
     # mod <- fit.mprobit( y=subdf$Targ_chosen, x =subdf$Difference,
     #                     start <- c(-0.5,   1, 0   ),
     #                     lower <- c(-3,   0.3, 0   ),
@@ -430,8 +437,8 @@ getDistHorANOVAdata <- function() {
     
     df$mean[i]  <- mod$par[1]
     df$sd[i]    <- mod$par[2]
-    df$margL[i] <- mod$par[3]
-    df$margU[i] <- mod$par[4]
+    df$LR[i]    <- mod$par[3]
+    # df$margU[i] <- mod$par[4]
     
     descr <- descr.mprobit(p=mod$par)
     df$PSE[i]   <- descr$PSE
@@ -443,16 +450,20 @@ getDistHorANOVAdata <- function() {
 }
 
 
-doDistHorizontalANOVA <- function() {
+doDistHorizontalANOVA <- function(dv="PSE") {
   
   distHorData <- getDistHorANOVAdata()
   distOrgData <- getDistANOVAdata()
   
-  distOrgData <- distOrgData[which(distOrgData$participant %in% distHorData$participant),]
-  distHorData <- distHorData[which(distHorData$participant %in% distOrgData$participant),]
+  # distOrgData <- distOrgData[which(distOrgData$participant %in% distHorData$participant),]
+  # distHorData <- distHorData[which(distHorData$participant %in% distOrgData$participant),]
   
   distHorData$orientation = 'horizontal'
   distOrgData$orientation = 'tilted'
+  
+  distHorData$participant <- sprintf('H_%s', distHorData$participant)
+  distOrgData$participant <- sprintf('O_%s', distOrgData$participant)
+  
   
   AOVdata <- rbind(distHorData, distOrgData)
   
@@ -460,12 +471,12 @@ doDistHorizontalANOVA <- function() {
   # fit the model
   org_bias_aov <- afex::aov_ez(
     id = "participant",
-    dv = "PSE",
+    dv = dv,
     data = distOrgData,
     within = c("Eye", "Location"),
   )
   
-  cat("==== Original Distance Bias ANOVA:\n\n")
+  cat(sprintf("==== Original Distance %s ANOVA:\n\n",dv))
   
   print(org_bias_aov)
   
@@ -474,24 +485,25 @@ doDistHorizontalANOVA <- function() {
   # fit the model
   org_bias_aov <- afex::aov_ez(
     id = "participant",
-    dv = "PSE",
+    dv = dv,
     data = distHorData,
     within = c("Eye", "Location"),
   )
   
-  cat("==== Horizontal Distance Bias ANOVA:\n\n")
+  cat(sprintf("\n==== Horizontal Distance %s ANOVA:\n\n",dv))
   
   print(org_bias_aov)
   
   # fit the model
   bias_aov <- afex::aov_ez(
     id = "participant",
-    dv = "PSE",
+    dv = dv,
     data = AOVdata,
-    within = c("Eye", "Location", "orientation"),
+    within = c("Eye", "Location"),
+    between = "orientation"
   )
   
-  cat("==== Distance/Horizontal Bias ANOVA:\n\n")
+  cat(sprintf("\n==== Distance/Horizontal %s ANOVA:\n\n",dv))
   
   print(bias_aov)
   
@@ -560,6 +572,166 @@ plotDistHorizontalIpsiEffectDistribution <- function() {
   lines(x=seq(-2,2,.01), y=dos.pd, col='red', lty=3)
   
   print(ks.test(df$effect, 'pnorm', mean=mean(df$effect), sd=sd(df$effect)))
+}
+
+# Eyetracker calibration sequence -----
+
+extractCalibrationSequence <- function() {
+  
+  IDs <- findParticipants(task='distHorizontal')
+  
+  calibration_log <- NA
+  
+  for (ID in IDs) {
+    
+    # find the last eyetracking files for each participant and hemifield:
+    folder <- sprintf('../data/distHorizontal/eyetracking/%s/', ID)
+    alltaskfiles <- list.files( path = folder, pattern='*.csv' )
+    alltaskfiles <- alltaskfiles[which(grepl('dstH', alltaskfiles))]
+    lastfiles <- list()
+    for (hf in c('LH','RH')) {
+      Hfiles <- alltaskfiles[which(grepl(sprintf('%s', hf), alltaskfiles))]
+      nums <- c()
+      for (hfile in Hfiles) {
+        # print(hfile)
+        pidx <- unlist(gregexpr('[.]', hfile))[1]
+        uidx <- tail(unlist(gregexpr(hf, hfile)), n=1)
+        # print(pidx)
+        # print(uidx)
+        nums <- c(nums, as.numeric(substr(hfile, uidx+2, pidx-1)))
+      }
+      lastfiles[[hf]] <- sprintf('%sdstH%s%d.csv', folder, hf, max(nums))
+    }
+    
+    # print(lastfiles)
+    
+    for (hf in c('LH','RH')) {
+      df <- fixLiveTrack(read.csv( file = lastfiles[[hf]], header=TRUE ))
+      # write.csv(df, file = sprintf('../data/distHorizontal/eyetracking/%s/clean_distH_%s.csv', ID, hf), row.names=FALSE)
+      
+      comments <- df$Comment[which(df$Comment != ' ')]
+      
+      trial <- c()
+      calibrations <- c()
+      
+      trial_no <- 0
+      N_calibrations <- 0
+      for (comment in comments) {
+        if (grepl(' calibration', comment)) {
+          N_calibrations <- N_calibrations + 1
+        }
+        if (grepl(' start trial', comment)) {
+          trial_no <- as.numeric(substr(comment, 14, nchar(comment)))
+          cat(sprintf('%s, %s, trial %d, calibrations: %d\n', ID, hf, trial_no, N_calibrations))
+          
+          trial        <- c(trial, trial_no)
+          calibrations <- c(calibrations, N_calibrations)
+          
+          N_calibrations <- 0
+          
+        }
+        
+        
+        
+      }
+      
+      phfdf <- data.frame(trial=trial, calibrations=calibrations)
+      phfdf$ID <- ID
+      phfdf$hemifield <- hf
+      phfdf$file <- lastfiles[[hf]] # this is the eye-tracking file... what about the behavioral response file?
+      
+      if (is.data.frame(calibration_log)) {
+        calibration_log <- rbind(calibration_log, phfdf)
+      } else {
+        calibration_log <- phfdf
+      }
+      
+    }
+    
+  }
+  
+  write.csv(calibration_log, file = '../data/distHorizontal/calibration_log.csv', row.names=FALSE)
+  
+}
+
+
+checkCalibrationSanity <- function() {
+  
+  df <- read.csv(file = '../data/distHorizontal/calibration_log.csv', header=TRUE, stringsAsFactors = FALSE)
+  
+  participants <- unique(df$ID)
+  
+  for (ID in participants) {
+    
+    for (hf in c('LH','RH')) {
+      
+      subdf <- df[which(df$ID == ID & df$hemifield == hf),]
+      
+      print(c(ID, hf, max(subdf$trial), sum(subdf$calibrations)))
+      # if (max(subdf$trial) < 240) {
+      #   print(c(ID, hf, max(subdf$trial), sum(subdf$calibrations)))
+      # }
+      
+      
+    }
+    
+  }
+  
+  
+}
+
+
+fixLiveTrack <- function(df) {
+  
+  df <- df[which(df$Timestamp != 'Timestamp'),]
+  
+  df <- df[,which(names(df) != 'Trigger')]
+  
+  for (colname in names(df)) {
+    
+    if (colname != 'Comment') {
+      df[,colname] <- as.numeric(df[,colname])
+    }
+    
+  }
+  
+  # find spots where time goes back down (calibration):
+  idxs <- which(diff(df$Timestamp) < 0)
+  
+  # how many samples are there:
+  nsamples <- length(df$Timestamp)
+  
+  # loop through reset points:
+  for (idx_no in c(1:length(idxs))) {
+    idx <- idxs[idx_no]
+    lval <- df$Timestamp[idx]
+    if (idx_no == length(idxs)) {
+      tidx <- c((idx+1):nsamples)
+    } else {
+      tidx <- c((idx+1):idxs[idx_no+1])
+    }
+    df$Timestamp[tidx] <- df$Timestamp[tidx] + lval
+  }
+  
+  # fix instances where timestamps go up too much:
+  # find spots where time goes back down (calibration):
+  idxs <- which(diff(df$Timestamp) > 2500)
+  
+  # loop through reset points:
+  for (idx_no in c(1:length(idxs))) {
+    idx <- idxs[idx_no]
+    lval <- df$Timestamp[idx] - df$Timestamp[idx+1] + 2000
+    if (idx_no == length(idxs)) {
+      tidx <- c((idx+1):nsamples)
+    } else {
+      tidx <- c((idx+1):idxs[idx_no+1])
+    }
+    df$Timestamp[tidx] <- df$Timestamp[tidx] + lval
+  }
+  
+  
+  return(df)
+  
 }
 
 # Binocular Distance task variant ----

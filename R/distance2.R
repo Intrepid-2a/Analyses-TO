@@ -317,8 +317,9 @@ getDistANOVAdata <- function() {
   
   df$mean  <- NA
   df$sd    <- NA
-  df$margL <- NA
-  df$margU <- NA
+  # df$margL <- NA
+  # df$margU <- NA
+  df$LR    <- NA
   df$PSE   <- NA
   df$slope <- NA
   
@@ -331,9 +332,9 @@ getDistANOVAdata <- function() {
     subdf <- data[data$participant == participant & data$Eye == eye & data$Location == location, ]
     
     mod <- fit.mprobit( y=subdf$Targ_chosen, x =subdf$Difference,
-                         start = c(-0.5,   1, 0,   0  ),
-                         lower = c(-3,   0.3, 0,   0  ),
-                         upper = c( 3,     3, 0.3, 0.3) )
+                         start = c(-0.5,   1, 0  ),
+                         lower = c(-3,   0.3, 0  ),
+                         upper = c( 3,     3, 0.3) )
     # mod <- fit.mprobit( y=subdf$Targ_chosen, x =subdf$Difference,
     #                     start <- c(-0.5,   1, 0   ),
     #                     lower <- c(-3,   0.3, 0   ),
@@ -341,8 +342,9 @@ getDistANOVAdata <- function() {
     
     df$mean[i] <- mod$par[1]
     df$sd[i]   <- mod$par[2]
-    df$margL[i] <- mod$par[3]
-    df$margU[i] <- mod$par[4]
+    # df$margL[i] <- mod$par[3]
+    # df$margU[i] <- mod$par[4]
+    df$LR[i]   <- mod$par[3]
     
     descr <- descr.mprobit(p=mod$par)
     df$PSE[i]   <- descr$PSE
@@ -857,4 +859,61 @@ plotStimulusAngles <- function(target='inline') {
     dev.off()
   }
   
+}
+
+getBlindSpotEccentricity <- function() {
+  
+  participants <- read.table(file = 'data/participants.tsv', header = TRUE, sep = "\t", skip = 0)
+  participants <- participants$ID[which(participants$distance)]
+  
+  
+  participant  <- c()
+  left_x       <- c()
+  left_y       <- c()
+  left_ecc     <- c()
+  right_x      <- c()
+  right_y      <- c()
+  right_ecc    <- c()
+
+  
+  for (ppID in participants) {
+    BS <- jsonlite::read_json(sprintf('data/sub-%s/ses-distance/beh/sub-%s_distance.json', ppID, ppID))$blindspot_mapping
+    
+    # RIGHT properties
+    right_pos <- as.numeric(BS$right$position)
+    # right_size <- as.numeric(BS$right$size)
+    
+    
+    # right_bs_angle <- atan2(right_pos[2], right_pos[1]) * 180 / pi
+    # # right_ang_up = (cart2pol(spot_cart[0], spot_cart[1] + spot_size[1])[0] - spot[0]) + 2
+    # right_ang_up = (atan2(right_pos[2] + right_size[1], right_pos[1]) * 180 / pi) - right_bs_angle + 2
+    
+    
+    # LEFT properties
+    left_pos <- as.numeric(BS$left$position)
+    # left_size <- as.numeric(BS$left$size)
+    
+    # left_bs_angle <- atan2(left_pos[2], -1*left_pos[1]) * 180 / pi
+    # # left_ang_up = (cart2pol(spot_cart[0], spot_cart[1] - spot_size[1])[0] - spot[0]) + 2
+    # left_ang_up = (atan2(left_pos[2] + left_size[1], -left_pos[1]) * 180 / pi) - left_bs_angle + 2
+    
+    
+    participant  <- c(participant, ppID)
+    left_x       <- c(left_x, left_pos[1])
+    left_y       <- c(left_y, left_pos[2])
+    left_ecc     <- c(left_ecc, sqrt(left_pos[1]^2 + left_pos[2]^2))
+    right_x      <- c(right_x, right_pos[1])
+    right_y      <- c(right_y, right_pos[2])
+    right_ecc    <- c(right_ecc, sqrt(right_pos[1]^2 + right_pos[2]^2))
+    
+  }
+  
+  return( data.frame ( participant,
+                       left_x,
+                       left_y,
+                       left_ecc,
+                       right_x,
+                       right_y,
+                       right_ecc
+                       ) )
 }
