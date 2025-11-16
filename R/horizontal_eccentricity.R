@@ -462,7 +462,7 @@ plotPSEoverOffsetDifferences <- function(target='inline', task='recDistHorizonta
   plot(NULL,NULL, 
        xlim=c(-2,2), ylim=c(-2,2),
        xlab='shift difference [dva]', ylab='PSE [dva]',
-       bty='n',  asp=1)
+       bty='n', ax=F,  asp=1)
   
   lines(x=c(-2,2), y=c(0,0), col='#999999', lty=3)
   lines(y=c(-2,2), x=c(0,0), col='#999999', lty=3)
@@ -497,6 +497,9 @@ plotPSEoverOffsetDifferences <- function(target='inline', task='recDistHorizonta
                       area = c('bsa', 'out', 'bsa', 'out'),
                       col  = c('red', 'orange', 'blue', 'turquoise'))
   
+  
+  predPSEs <- offsetDiffs*coef[2]
+  
   ncores   <- parallel::detectCores()
   usecores <- max(c(1,floor(ncores*0.5)))
   cluster    <- parallel::makeCluster(usecores)
@@ -517,7 +520,7 @@ plotPSEoverOffsetDifferences <- function(target='inline', task='recDistHorizonta
       # df$Difference <- df$Difference + (df$Difference - df$recoveredDiffs)
       for (idx in c(1:length(offsetDiffs))) {
         offsetDiff <- offsetDiffs[idx]
-        PSE <- PSEs[idx]
+        PSE <- predPSEs[idx]
         df$Difference[which(df$offsetDiff == offsetDiff)] <- df$Difference[which(df$offsetDiff == offsetDiff)] - PSE
       }
       
